@@ -1,5 +1,3 @@
-import { useState } from "react";
-import { ChevronDown, ChevronUp } from "lucide-react";
 import { CampoFecha } from "@/components/formulario/campo-fecha";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -43,7 +41,6 @@ export function Paso1DatosPersonales({
   menorDeEdad,
 }: Paso1DatosPersonalesProps) {
   const limitesFecha = obtenerLimitesFechaNacimiento();
-  const [desplegarSalud, setDesplegarSalud] = useState(false);
 
   const propsDeCampo = (campo: string, className?: string) => ({
     onBlur: () => onRevisarCampo(campo),
@@ -311,87 +308,67 @@ export function Paso1DatosPersonales({
         </div>
       )}
 
-      {/* 6. Dirección y salud (opcional) - Acordeón desplegable */}
-      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
-        <button
-          type="button"
-          onClick={() => setDesplegarSalud((prev) => !prev)}
-          className="w-full flex items-center justify-between p-3.5 sm:p-4 bg-slate-50/50 hover:bg-slate-100/50 dark:bg-slate-900/30 dark:hover:bg-slate-900/60 transition-colors text-left"
-        >
-          <span className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
-            Dirección y salud (opcional)
-          </span>
-          {desplegarSalud ? (
-            <ChevronUp className="size-4 text-slate-500" />
-          ) : (
-            <ChevronDown className="size-4 text-slate-500" />
-          )}
-        </button>
+      {/* 6. Dirección */}
+      <div className={CAMPO_MODAL}>
+        <Label htmlFor="alumno-direccion" className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200">
+          Dirección <span className="text-muted-foreground font-normal">(opcional)</span>
+        </Label>
+        <Input
+          id="alumno-direccion"
+          placeholder="Calle, número, barrio o departamento"
+          value={datos.direccion || ""}
+          onChange={(e) => actualizarCampo("direccion", e.target.value)}
+          {...propsDeCampo("direccion")}
+        />
+        <MensajeError campo="direccion" errores={errores} />
+      </div>
 
-        {desplegarSalud && (
-          <div className="p-4 space-y-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/20">
-            <div className={CAMPO_MODAL}>
-              <Label htmlFor="alumno-direccion" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                Dirección
-              </Label>
-              <Input
-                id="alumno-direccion"
-                placeholder="Calle, número, barrio o departamento"
-                value={datos.direccion || ""}
-                onChange={(e) => actualizarCampo("direccion", e.target.value)}
-                {...propsDeCampo("direccion")}
-              />
-              <MensajeError campo="direccion" errores={errores} />
-            </div>
+      {/* 7. Apto médico: la fecha se pide solo si lo presentó */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800">
+          <Label htmlFor="apto-medico-toggle" className="text-xs sm:text-sm font-semibold cursor-pointer text-slate-800 dark:text-slate-200">
+            Apto médico <span className="text-muted-foreground font-normal">(opcional)</span>
+          </Label>
+          <Switch
+            id="apto-medico-toggle"
+            checked={datos.apto_medico}
+            onCheckedChange={(checked) => actualizarCampo("apto_medico", checked)}
+          />
+        </div>
 
-            <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800">
-              <div className="space-y-0.5">
-                <Label htmlFor="apto-medico-toggle" className="text-xs font-bold cursor-pointer text-slate-800 dark:text-slate-200">
-                  Apto Médico
-                </Label>
-              </div>
-              <Switch
-                id="apto-medico-toggle"
-                checked={datos.apto_medico}
-                onCheckedChange={(checked) => actualizarCampo("apto_medico", checked)}
-              />
-            </div>
-
-            {datos.apto_medico && (
-              <div className={CAMPO_MODAL}>
-                <Label htmlFor="fecha-apto" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Fecha de Emisión del Apto <span className="text-destructive">*</span>
-                </Label>
-                <CampoFecha
-                  id="fecha-apto"
-                  etiquetaCalendario="Abrir calendario para la fecha de emisión del apto médico"
-                  min={datos.fecha_nacimiento || undefined}
-                  max={limitesFecha.max}
-                  value={datos.fecha_apto_medico || ""}
-                  onChange={(valor) => actualizarCampo("fecha_apto_medico", valor)}
-                  {...propsDeCampo("fecha_apto_medico")}
-                />
-                <MensajeError campo="fecha_apto_medico" errores={errores} />
-              </div>
-            )}
-
-            <div className={CAMPO_MODAL}>
-              <Label htmlFor="observaciones" className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                Observaciones o antecedentes médicos
-              </Label>
-              <Textarea
-                id="observaciones"
-                rows={2}
-                placeholder="Lesiones previas, patologías, recomendaciones de entrenamiento..."
-                maxLength={500}
-                value={datos.observaciones || ""}
-                onChange={(e) => actualizarCampo("observaciones", e.target.value)}
-                {...propsDeCampo("observaciones")}
-              />
-              <MensajeError campo="observaciones" errores={errores} />
-            </div>
+        {datos.apto_medico && (
+          <div className={CAMPO_MODAL}>
+            <Label htmlFor="fecha-apto" className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200">
+              Fecha de emisión del apto <span className="text-destructive">*</span>
+            </Label>
+            <CampoFecha
+              id="fecha-apto"
+              etiquetaCalendario="Abrir calendario para la fecha de emisión del apto médico"
+              min={datos.fecha_nacimiento || undefined}
+              max={limitesFecha.max}
+              value={datos.fecha_apto_medico || ""}
+              onChange={(valor) => actualizarCampo("fecha_apto_medico", valor)}
+              {...propsDeCampo("fecha_apto_medico")}
+            />
+            <MensajeError campo="fecha_apto_medico" errores={errores} />
           </div>
         )}
+
+        <div className={CAMPO_MODAL}>
+          <Label htmlFor="observaciones" className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200">
+            Observaciones o antecedentes médicos <span className="text-muted-foreground font-normal">(opcional)</span>
+          </Label>
+          <Textarea
+            id="observaciones"
+            rows={2}
+            placeholder="Lesiones previas, patologías, recomendaciones de entrenamiento..."
+            maxLength={500}
+            value={datos.observaciones || ""}
+            onChange={(e) => actualizarCampo("observaciones", e.target.value)}
+            {...propsDeCampo("observaciones")}
+          />
+          <MensajeError campo="observaciones" errores={errores} />
+        </div>
       </div>
     </div>
   );
