@@ -5,6 +5,7 @@ import {
   ValidationError,
 } from "../../../shared/errors/app-error.js";
 import type { IUnidadDeTrabajo } from "../../../shared/db/transaccion.js";
+import { esMenorDeEdad } from "../../../shared/utils/edad.js";
 import { fechaActualArgentina } from "../../../shared/utils/fecha-argentina.js";
 import type { Solicitante } from "../../../shared/utils/solicitante.types.js";
 import type { IInfoAlumnos } from "../../gestion-personas/alumno/interface/i-info-alumnos.js";
@@ -86,6 +87,38 @@ function verificarMedidas(horarios: HorarioRespuesta[], medidas: Medidas): void 
   }
 }
 
+// Un plan solo para menores (ej. Kid Fit) no admite a quien ya cumplió 18 al inscribirse, al reactivarse
+// ni al cambiar de plan. Quien cumple 18 ya inscripto sigue: la regla mira solo el momento de entrar.
+function verificarEdadParaElPlan(
+  plan: Pick<Plan, "nombre" | "solo_menores">,
+  fechaNacimiento: Date,
+  hoy: Date,
+): void {
+  if (plan.solo_menores && !esMenorDeEdad(fechaNacimiento, hoy)) {
+    throw new ValidationError(`El plan ${plan.nombre} es solo para menores de 18 años`);
+  }
+}
+
+// Las actividades para menores (ej. Kid Fit) no admiten a un mayor de edad, y un plan solo para menores
+// ofrece solo esas: así, al elegir el plan infantil, los horarios que se pueden tomar son los infantiles.
+function verificarActividadesParaLaEdad(
+  plan: Pick<Plan, "nombre" | "solo_menores">,
+  horarios: HorarioRespuesta[],
+  fechaNacimiento: Date,
+  hoy: Date,
+): void {
+  const deAdultos = horarios.find(({ actividad }) => !actividad.solo_menores);
+  if (plan.solo_menores && deAdultos) {
+    throw new ValidationError(
+      `El plan ${plan.nombre} solo admite actividades para menores: ${deAdultos.actividad.nombre} no lo es`,
+    );
+  }
+  const infantil = horarios.find(({ actividad }) => actividad.solo_menores);
+  if (infantil && !esMenorDeEdad(fechaNacimiento, hoy)) {
+    throw new ValidationError(`${infantil.actividad.nombre} es solo para menores de 18 años`);
+  }
+}
+
 // hoy y los días de DIAS_RESERVA_PREINSCRIPCION, leídos una vez por operación.
 interface PlazoDeReserva {
   hoy: Date;
@@ -142,10 +175,10 @@ export class InscripcionService implements IInfoInscripciones {
   async preinscribir(input: PreinscribirInput, solicitante: Solicitante): Promise<Preinscripcion> {
     if (!solicitante.esPropietaria) await this.verificarQuePuedePreinscribir(input.inscripcion, solicitante);
     const { medidas, ...datosDeInscripcion } = input.inscripcion;
-    const { datos, horarios } = await this.prepararPlanYHorarios({
-      ...datosDeInscripcion,
-      estado: "PREINSCRIPTA",
-    });
+    const { datos, horarios } = await this.prepararPlanYHorarios(
+      { ...datosDeInscripcion, estado: "PREINSCRIPTA" },
+      input.alumno.fecha_nacimiento,
+    );
     verificarMedidas(horarios, medidas);
     const plazo = await this.plazoDeReserva();
 
@@ -511,16 +544,18 @@ export class InscripcionService implements IInfoInscripciones {
     if (!alumno || (alumno.estado === "BAJA" && !permitirAlumnoDeBaja)) {
       throw new NotFoundError("Alumno inexistente o dado de baja");
     }
-    const { datos, horarios } = await this.prepararPlanYHorarios(input);
+    const { datos, horarios } = await this.prepararPlanYHorarios(input, alumno.usuario.fecha_nacimiento);
     return { datos: { ...datos, id_alumno: input.id_alumno }, horarios };
   }
 
   private async prepararPlanYHorarios(
     input: Omit<DatosDeInscripcion, "id_alumno">,
+    fechaNacimiento: Date,
   ): Promise<InscripcionPreparada<Omit<DatosPreparados, "id_alumno">>> {
     const plan = await this.planes.buscarPorId(input.id_plan);
     if (!plan || plan.fecha_baja) throw new ConflictError("El plan no existe o está dado de baja");
     const hoy = fechaActualArgentina();
+    verificarEdadParaElPlan(plan, fechaNacimiento, hoy);
     const fechaInicio = input.fecha_inicio ?? hoy;
     if (fechaInicio < hoy) {
       throw new ValidationError("La fecha de inicio no puede ser anterior a hoy");
@@ -534,6 +569,7 @@ export class InscripcionService implements IInfoInscripciones {
     ]);
     if (!precio) throw new ConflictError("El plan no tiene un precio vigente hoy");
     const horarios = await this.validarHorarios(plan, input.id_profesora, input.ids_horarios);
+    verificarActividadesParaLaEdad(plan, horarios, fechaNacimiento, hoy);
 
     return {
       datos: {

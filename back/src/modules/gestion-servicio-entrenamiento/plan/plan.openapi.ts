@@ -35,6 +35,9 @@ export const planSchema = z
     dias_gracia: z.number().int(),
     id_actividad_exclusiva: z.number().int().nullable(),
     profesora_unica: z.boolean(),
+    solo_menores: z
+      .boolean()
+      .openapi({ description: "Solo admite alumnos menores de 18 años (ej. Kid Fit)" }),
     fecha_alta: fechaSchema,
     fecha_baja: fechaSchema.nullable(),
     actividad_exclusiva: z

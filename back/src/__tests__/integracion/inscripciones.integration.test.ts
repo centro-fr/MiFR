@@ -1394,3 +1394,134 @@ describe("PI-99: la baja programada de un horario con alumnos (US-04, US-08)", (
     });
   });
 });
+
+describe("PI-101: los planes y las actividades para menores no admiten a quien ya cumplió 18 años", () => {
+  async function crearPlanSoloMenores(): Promise<number> {
+    const respuesta = await comoMarina("post", "/planes").send({
+      tipo: "MENSUAL",
+      nombre: "Kids",
+      clases_por_semana: 2,
+      precio: 22000,
+      solo_menores: true,
+    });
+    expect(respuesta.status).toBe(201);
+    expect(respuesta.body.solo_menores).toBe(true);
+    return respuesta.body.id_plan;
+  }
+
+  async function horarioDeKidFit(): Promise<number> {
+    const { id_horario } = await prisma.horarios.findFirstOrThrow({
+      where: { id_actividad: datosDemo.idActividad.get("KID_FIT"), fecha_baja: null },
+      orderBy: { dia_semana: "asc" },
+    });
+    return id_horario;
+  }
+
+  const CARLA_ID = () => datosDemo.idProfesora.get(CARLA)!;
+
+  it("inscribe a un menor y rechaza con 400 a un mayor, en el alta, la pre-inscripción y el cambio de plan, sin guardar nada", async () => {
+    const idPlan = await crearPlanSoloMenores();
+    const [horario] = await horariosFuncionales();
+    const menor = await crearAlumno(prisma, { fecha_nacimiento: new Date("2014-03-02T00:00:00Z") });
+    const mayor = await crearAlumno(prisma, { fecha_nacimiento: new Date("1995-04-20T00:00:00Z") });
+    const { body: delMayor } = await inscribir(mayor.id_alumno, [horario.id_horario]);
+    const inscripcionesAntes = await prisma.inscripciones.count();
+    const alumnosAntes = await prisma.alumnos.count();
+
+    const altaDelMayor = await inscribir(mayor.id_alumno, [horario.id_horario], idPlan);
+    const preinscripcionDelMayor = await comoMarina("post", "/preinscripciones").send({
+      alumno: {
+        nombre: "Tomás",
+        apellido: "Pérez",
+        email: "tomas.perez@example.com",
+        dni: "40111222",
+        fecha_nacimiento: "1998-04-12",
+        cont_emerg_nombre: "Laura Pérez",
+        cont_emerg_telefono: "3794 112233",
+      },
+      inscripcion: {
+        id_plan: idPlan,
+        id_profesora: datosDemo.idProfesora.get(LUCIA),
+        ids_horarios: [horario.id_horario],
+      },
+    });
+    const cambioDelMayor = await comoMarina(
+      "post",
+      `/inscripciones/${delMayor.id_inscripcion}/cambio-plan`,
+    ).send({
+      id_plan: idPlan,
+      id_profesora: datosDemo.idProfesora.get(LUCIA),
+      ids_horarios: [horario.id_horario],
+    });
+
+    for (const respuesta of [altaDelMayor, preinscripcionDelMayor, cambioDelMayor]) {
+      expect(respuesta.status).toBe(400);
+      expect(respuesta.body.message ?? JSON.stringify(respuesta.body)).toContain(
+        "solo para menores de 18 años",
+      );
+    }
+    expect(await prisma.inscripciones.count()).toBe(inscripcionesAntes);
+    expect(await prisma.alumnos.count()).toBe(alumnosAntes);
+    expect(await obtenerInscripcion(delMayor.id_inscripcion)).toMatchObject({
+      id_plan: datosDemo.idPlan.get("Básico"),
+    });
+
+    const altaDelMenor = await inscribir(menor.id_alumno, [await horarioDeKidFit()], idPlan, CARLA_ID());
+    expect(altaDelMenor.status).toBe(201);
+  });
+
+  it("el plan solo para menores ofrece solo actividades para menores, y Kid Fit no admite a un mayor con ningún plan", async () => {
+    const idPlan = await crearPlanSoloMenores();
+    const [funcional] = await horariosFuncionales();
+    const kidFit = await horarioDeKidFit();
+    const menor = await crearAlumno(prisma, { fecha_nacimiento: new Date("2014-03-02T00:00:00Z") });
+    const mayor = await crearAlumno(prisma, { fecha_nacimiento: new Date("1995-04-20T00:00:00Z") });
+    const inscripcionesAntes = await prisma.inscripciones.count();
+
+    const menorEnFuncional = await inscribir(menor.id_alumno, [funcional.id_horario], idPlan);
+    const mayorEnKidFit = await inscribir(
+      mayor.id_alumno,
+      [kidFit],
+      datosDemo.idPlan.get("Básico")!,
+      CARLA_ID(),
+    );
+
+    expect(menorEnFuncional.status).toBe(400);
+    expect(JSON.stringify(menorEnFuncional.body)).toContain("solo admite actividades para menores");
+    expect(mayorEnKidFit.status).toBe(400);
+    expect(JSON.stringify(mayorEnKidFit.body)).toContain("Kid Fit es solo para menores de 18 años");
+    expect(await prisma.inscripciones.count()).toBe(inscripcionesAntes);
+
+    const menorEnKidFitConPlanComun = await inscribir(
+      menor.id_alumno,
+      [kidFit],
+      datosDemo.idPlan.get("Básico")!,
+      CARLA_ID(),
+    );
+    expect(menorEnKidFitConPlanComun.status).toBe(201);
+  });
+
+  it("la propietaria marca y desmarca un plan, marca una actividad, y las marcas quedan en la base", async () => {
+    const idPlan = datosDemo.idPlan.get("Básico")!;
+
+    const marcar = await comoMarina("patch", `/planes/${idPlan}`).send({ solo_menores: true });
+    expect(marcar.status).toBe(200);
+    expect(marcar.body.solo_menores).toBe(true);
+    expect(await prisma.planes.findUniqueOrThrow({ where: { id_plan: idPlan } })).toMatchObject({
+      solo_menores: true,
+    });
+
+    const desmarcar = await comoMarina("patch", `/planes/${idPlan}`).send({ solo_menores: false });
+    expect(desmarcar.body.solo_menores).toBe(false);
+
+    const idFuncional = datosDemo.idActividad.get("FUNCIONAL")!;
+    const actividad = await comoMarina("patch", `/actividades/${idFuncional}`).send({ solo_menores: true });
+    expect(actividad.status).toBe(200);
+    expect(actividad.body.solo_menores).toBe(true);
+    expect(
+      await prisma.actividades.findUniqueOrThrow({ where: { id_actividad: idFuncional } }),
+    ).toMatchObject({
+      solo_menores: true,
+    });
+  });
+});

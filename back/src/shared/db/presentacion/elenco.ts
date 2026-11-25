@@ -76,6 +76,7 @@ export interface ActividadDelElenco {
   modalidad: modalidad_actividad;
   cupo_maximo: number;
   requiere_medidas: boolean;
+  solo_menores?: boolean;
 }
 
 export const ACTIVIDADES: ActividadDelElenco[] = [
@@ -151,6 +152,7 @@ export const ACTIVIDADES: ActividadDelElenco[] = [
     modalidad: "GRUPAL",
     cupo_maximo: 10,
     requiere_medidas: false,
+    solo_menores: true,
   },
   {
     codigo: "COMBAT",
@@ -227,6 +229,7 @@ export interface PlanDelElenco {
   clases_por_semana: number | null;
   dias_gracia: number;
   profesora_unica: boolean;
+  solo_menores?: boolean;
   codigoActividadExclusiva: string | null;
   // El precio de antes del aumento y el actual; el programado empieza a regir el mes que viene.
   precioAnterior: number;
@@ -292,6 +295,7 @@ export const PLANES: PlanDelElenco[] = [
     clases_por_semana: 2,
     dias_gracia: 5,
     profesora_unica: false,
+    solo_menores: true,
     codigoActividadExclusiva: "KID_FIT",
     precioAnterior: 22000,
     precioActual: 25000,

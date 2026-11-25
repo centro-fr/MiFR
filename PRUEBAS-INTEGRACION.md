@@ -185,16 +185,16 @@ Cada US del sprint en curso tiene que quedar cubierta por al menos dos casos de 
 | US-02 | Definición de permisos por rol                            |   1    | PI-01 a PI-03, PI-05, PI-07 a PI-10, PI-14, PI-28, PI-29      | Sí, salvo PI-10 (Manual)                                                               |
 | US-03 | Alta y administración de actividades y cupos              |   1    | PI-03, PI-04, PI-06, PI-37                                    | Sí                                                                                     |
 | US-04 | Asignación de profesoras y horarios a actividades         |   1    | PI-03, PI-04, PI-05, PI-06, PI-24, PI-27, PI-38, PI-46, PI-99 | Sí                                                                                     |
-| US-05 | Pre-inscripción de alumno nuevo                           |   2    | PI-15, PI-16, PI-20, PI-27, PI-30, PI-31, PI-37 a PI-39, PI-53, PI-64 | Sí, alumno, inscripción, horarios, cupos, peso y talla, reserva que vence y el alta en un solo pedido |
+| US-05 | Pre-inscripción de alumno nuevo                           |   2    | PI-15, PI-16, PI-20, PI-27, PI-30, PI-31, PI-37 a PI-39, PI-53, PI-64, PI-101 | Sí, alumno, inscripción, horarios, cupos, peso y talla, reserva que vence y el alta en un solo pedido |
 | US-06 | Asociación de tutor a alumno menor de edad                |   2    | PI-16, PI-17, PI-19, PI-31                                    | Sí                                                                                     |
 | US-07 | Alta definitiva al confirmarse el primer pago             |   2    | PI-19, PI-21, PI-34, PI-35, PI-38, PI-42 a PI-44             | Sí                                                                                     |
 | US-08 | Baja lógica de alumno                                     |   2    | PI-18, PI-19, PI-22, PI-41, PI-44, PI-45, PI-99               | Sí                                                                                     |
 | US-09 | Modificación de datos de alumno                           |   2    | PI-17, PI-23, PI-25, PI-97                                    | Sí, cambio de plan y horarios (las cuotas corresponden al Sprint 3)                    |
 | US-10 | Consulta y búsqueda de alumnos                            |   2    | PI-18, PI-20, PI-25, PI-26, PI-30, PI-32, PI-36, PI-45, PI-51, PI-52, PI-94, PI-95 | Sí                                                                              |
-| US-11 | Alta y edición de planes vigentes                         |   2    | PI-06, PI-11, PI-12, PI-14                                    | Sí                                                                                     |
+| US-11 | Alta y edición de planes vigentes                         |   2    | PI-06, PI-11, PI-12, PI-14, PI-101                            | Sí, también la marca de plan solo para menores                                         |
 | US-12 | Actualización de precios con fecha de vigencia            |   2    | PI-11, PI-13, PI-40                                           | Sí                                                                                     |
 | US-13 | Alta de descuentos y promociones temporales               |   4    | PI-59                                                         | Sí                                                                                     |
-| US-14 | Renovación o cambio de plan                               |   5    | PI-97, PI-98                                                  | Sí: el cambio programado al terminar la gracia, su cancelación y el proceso que lo aplica; el cambio de horarios dentro de la misma profesora y actividad |
+| US-14 | Renovación o cambio de plan                               |   5    | PI-97, PI-98, PI-101                                          | Sí: el cambio programado al terminar la gracia, su cancelación y el proceso que lo aplica; el cambio de horarios dentro de la misma profesora y actividad |
 | US-15 | Registro de cobro en efectivo                             |   3    | PI-33 a PI-36, PI-40, PI-42                                   | Sí                                                                                     |
 | US-16 | Registro de pago por transferencia con comprobante        |   3    | PI-33, PI-39, PI-43, PI-53, PI-54, PI-96 | Sí                                                                                     |
 | US-17 | Aprobación o rechazo de transferencias                    |   3    | PI-33, PI-43, PI-96 | Sí                                                                                     |
@@ -318,8 +318,9 @@ Cada caso describe un recorrido por el sistema. Indica las US que involucra, la 
 | PI-98         | Con el plan vigente, el cambio de plan se aplica al terminar la gracia | US-14             | Servicios          | Demostración, reloj fijo, primer pago en efectivo, `AplicadorProgramados` | Sí  |
 | PI-99         | La baja programada de un horario con alumnos                         | US-04, US-08        | Servicios          | Demostración, reloj fijo, primer pago en efectivo, `AplicadorProgramados` | Sí  |
 | PI-100        | Los datos de la presentación recorridos por la API real              | Transversal         | Servicios          | Base reiniciada, `cargarPresentacion`, procesos reales     | Sí           |
+| PI-101        | Los planes y las actividades para menores no admiten a un mayor      | US-05, US-11, US-14 | Servicios          | Demostración, `crearAlumno` con fecha de nacimiento        | Sí           |
 
-PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven, porque con mocks los permisos nunca salen de la base. PI-10 reúne los pasos de PI-01 y PI-02 que ocurren en el navegador. PI-11 a PI-27 son del Sprint 2: planes y precios (PI-11 a PI-14), alumnos (PI-15 a PI-19 y PI-25, PI-26) e inscripciones (PI-20 a PI-24 y PI-27). PI-28 a PI-32 salen de la auditoría de seguridad del backend (10/10/2026): cada uno prueba contra la base uno de los arreglos que resume `back/.claude/rules/seguridad.md`. PI-33 en adelante son de cuotas y pagos (Sprint 3); mientras el subsistema no esté montado en la API, se prueban sobre los componentes reales y la base, sin HTTP. PI-47 a PI-50 son de clases y asistencia (Sprint 3). PI-51 y PI-52 completan US-10 con el estado de cuota y el historial de pagos. PI-53 y PI-54 son de los parámetros del sistema que edita la propietaria y de los datos bancarios para transferir. PI-55 y PI-56 cierran los puntos abiertos de asistencia (12/10/2026). PI-64 es la pre-inscripción en un solo pedido (18/10/2026); se numera después de PI-57 a PI-63, que ya usa la trazabilidad. PI-78 a PI-82 son de las liquidaciones y las tarifas de honorarios (24/10/2026). PI-86 es el cierre mensual automático de los honorarios (04/11/2026). PI-87 es el movimiento de alumnos del reporte de Inscripciones (05/11/2026). PI-88 y PI-89 cubren edición, reincorporación y privacidad de contactos del plantel (09/11/2026). PI-90 es la foto de perfil que Google manda en el login y el back guarda y devuelve (10/11/2026). PI-91 es la liquidación a precio de lista de lo cobrado con promoción (13/11/2026). PI-93 es el panel del portal del alumno (13/11/2026). PI-94 es el historial de asistencia de la ficha. PI-97 a PI-99 son el cambio de horarios dentro de lo contratado, el cambio de plan programado y la baja programada de un horario con alumnos (13/11/2026).
+PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven, porque con mocks los permisos nunca salen de la base. PI-10 reúne los pasos de PI-01 y PI-02 que ocurren en el navegador. PI-11 a PI-27 son del Sprint 2: planes y precios (PI-11 a PI-14), alumnos (PI-15 a PI-19 y PI-25, PI-26) e inscripciones (PI-20 a PI-24 y PI-27). PI-28 a PI-32 salen de la auditoría de seguridad del backend (10/10/2026): cada uno prueba contra la base uno de los arreglos que resume `back/.claude/rules/seguridad.md`. PI-33 en adelante son de cuotas y pagos (Sprint 3); mientras el subsistema no esté montado en la API, se prueban sobre los componentes reales y la base, sin HTTP. PI-47 a PI-50 son de clases y asistencia (Sprint 3). PI-51 y PI-52 completan US-10 con el estado de cuota y el historial de pagos. PI-53 y PI-54 son de los parámetros del sistema que edita la propietaria y de los datos bancarios para transferir. PI-55 y PI-56 cierran los puntos abiertos de asistencia (12/10/2026). PI-64 es la pre-inscripción en un solo pedido (18/10/2026); se numera después de PI-57 a PI-63, que ya usa la trazabilidad. PI-78 a PI-82 son de las liquidaciones y las tarifas de honorarios (24/10/2026). PI-86 es el cierre mensual automático de los honorarios (04/11/2026). PI-87 es el movimiento de alumnos del reporte de Inscripciones (05/11/2026). PI-88 y PI-89 cubren edición, reincorporación y privacidad de contactos del plantel (09/11/2026). PI-90 es la foto de perfil que Google manda en el login y el back guarda y devuelve (10/11/2026). PI-91 es la liquidación a precio de lista de lo cobrado con promoción (13/11/2026). PI-93 es el panel del portal del alumno (13/11/2026). PI-94 es el historial de asistencia de la ficha. PI-97 a PI-99 son el cambio de horarios dentro de lo contratado, el cambio de plan programado y la baja programada de un horario con alumnos (13/11/2026). PI-101 son los planes y las actividades solo para menores, como Kid Fit (24/11/2026).
 
 ### 6.2 Detalle
 
@@ -1248,6 +1249,20 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 
 **Automatizado:** Sí (V-01 a V-25).
 
+#### PI-101 — Los planes y las actividades para menores no admiten a quien ya cumplió 18 años
+
+**US:** US-05, US-11, US-14 · **Precondición:** escenario de demostración cargado, con la actividad Kid Fit marcada para menores; un alumno nacido en 2014 y otro en 1995, y una pre-inscripción del mayor en el plan Básico.
+
+1. Marina crea el plan "Kids" con `solo_menores: true` (`POST /planes`).
+2. Inscribe al alumno mayor en Kids (`POST /inscripciones`), pre-inscribe a un alumno nuevo nacido en 1998 en Kids (`POST /preinscripciones`) y pasa la pre-inscripción del mayor de Básico a Kids (`POST /inscripciones/:id/cambio-plan`).
+3. Inscribe al alumno menor en Kids, en un horario de Kid Fit.
+4. Con la base reiniciada y el plan Kids creado, inscribe al menor en Kids con un horario de Funcional, al mayor en Básico con un horario de Kid Fit y al menor en Básico con un horario de Kid Fit.
+5. Marina marca el plan Básico como solo para menores (`PATCH /planes/:id` con `solo_menores: true`) y lo vuelve a desmarcar, y marca Funcional como actividad para menores (`PATCH /actividades/:id`).
+
+**Resultado esperado:** el plan se crea con `solo_menores: true`. Los tres pedidos del paso 2 responden 400 con "El plan Kids es solo para menores de 18 años", sin crear ninguna inscripción ni ningún alumno, y la pre-inscripción del mayor sigue en Básico. La inscripción del menor responde 201. En el paso 4, la del menor con Funcional responde 400 ("solo admite actividades para menores") y la del mayor en Kid Fit, 400 ("Kid Fit es solo para menores de 18 años"), sin guardar nada; la del menor en Kid Fit con el plan Básico responde 201. Las marcas del paso 5 se guardan en la base.
+
+**Automatizado:** Sí (G-45 a G-47).
+
 ## 7. Tests automatizados
 
 373 tests en veintiún archivos, según la corrida del 21/11/2026 (algunos archivos numeran sus códigos por regla y no por test, así que la tabla no suma lo mismo):
@@ -1260,7 +1275,7 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 |    D    | `back/src/__tests__/integracion/planes.integration.test.ts`                     | 14 (D-01 a D-14) | PI-11, PI-12, PI-13, PI-14        |
 |    E    | `back/src/__tests__/integracion/alumnos.integration.test.ts`                    | 29 (E-01 a E-29) | PI-15 a PI-18, PI-25, PI-26, PI-31, PI-93, PI-94 |
 |    F    | `back/src/modules/gestion-personas/alumno/__tests__/alumno.integration.test.ts` | 3 (F-01 a F-03)  | PI-19                             |
-|    G    | `back/src/__tests__/integracion/inscripciones.integration.test.ts`              | 44 (G-01 a G-44) | PI-20 a PI-24, PI-27, PI-30, PI-32, PI-37, PI-38, PI-41, PI-44, PI-64, PI-66, PI-97 a PI-99 |
+|    G    | `back/src/__tests__/integracion/inscripciones.integration.test.ts`              | 47 (G-01 a G-47) | PI-20 a PI-24, PI-27, PI-30, PI-32, PI-37, PI-38, PI-41, PI-44, PI-64, PI-66, PI-97 a PI-99, PI-101 |
 |    H    | `back/src/__tests__/integracion/cuotas-y-pagos.integration.test.ts`             | 26 (H-01 a H-26) | PI-33 a PI-36, PI-40, PI-42, PI-43, PI-45, PI-51, PI-52, PI-95, PI-96 |
 |    I    | `back/src/shared/db/__tests__/parametros-iniciales.integration.test.ts`         | 4 (I-01 a I-04)  | PI-39                             |
 |    J    | `back/src/__tests__/integracion/clases-y-asistencia.integration.test.ts`        | 17 (J-01 a J-17) | PI-47 a PI-50, PI-55, PI-56       |
@@ -1355,6 +1370,9 @@ PI-07 a PI-09 cubren riesgos de control de acceso que los tests unitarios no ven
 | G-42        | Con la gracia terminada el cambio de plan se aplica en el momento (200) | PI-98 |
 | G-43        | Un horario con la baja programada no admite alumnos nuevos ni cambia su día (409), sí su cupo; la baja se cancela y cancelarla de nuevo responde 409 | PI-99 |
 | G-44        | El proceso saca a la pre-inscripta enseguida y a los activos al terminar la gracia; quien se queda sin horarios pasa a baja con el alumno, y el horario cae con el último | PI-99 |
+| G-45        | Un plan solo para menores inscribe a un menor y rechaza con 400 al mayor en el alta, la pre-inscripción y el cambio de plan, sin guardar nada | PI-101 |
+| G-46        | Un plan solo para menores ofrece solo actividades para menores (400 con Funcional), y Kid Fit no admite a un mayor con el plan Básico (400) pero sí a un menor | PI-101 |
+| G-47        | La propietaria marca y desmarca un plan como solo para menores y marca una actividad para menores; las marcas quedan en la base | PI-101 |
 | H-01, H-02  | La base aplica a cuotas y pagos las restricciones del DER aunque se saltee la API, y guarda las filas válidas                                                                 | PI-33 |
 | H-03        | Valentina tiene su primera cuota pagada en efectivo a Carla, pendiente de rendición                                                                                           | PI-34 |
 | H-04, H-05  | Si el pago no se puede guardar, no queda nada del alta (inscripción, alumno, usuario, rol, cuota); sin falla, quedan todos                                                     | PI-35 |
@@ -1810,6 +1828,9 @@ Se rompió a propósito cada regla, se comprobó que algún test fallara y se re
 | El proceso saca de un horario a quien está en sus días de gracia                      | G-44 (la primera versión no lo detectaba; se sumó una corrida en la gracia) |
 | El proceso no saca a las pre-inscriptas                                               | G-44 (no sacar a ninguna inscripción ACTIVA era una mutación equivalente: una pre-inscripta nunca tiene la cuota corriendo) |
 | El horario no se da de baja cuando sale el último alumno                              | G-44 |
+| Un plan solo para menores admite a un mayor de edad (PI-101)                          | G-45 y tres unitarios de `InscripcionService` |
+| Una actividad para menores admite a un mayor de edad (PI-101)                         | G-46 y un unitario de `InscripcionService` |
+| Un plan solo para menores acepta una actividad de adultos (PI-101)                    | G-46 y un unitario de `InscripcionService` |
 | La activación del primer pago no le da el rol al tutor (PI-100)                       | V-10 (la tutora no entra), V-16, V-21                                                                       |
 | Un pago de hoy queda con la hora al azar, aunque sea posterior al momento de la carga (PI-100) | V-15                                                                                               |
 
@@ -1872,6 +1893,8 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | 13/11/2026 | Integración de `dev` en la rama de PI-95 y PI-96, con la migración `quitar_codigo_promociones` | 338 | 338 aprobados | 127,1 s | Pasaron también los 2653 tests unitarios. El test de PI-91 deja de cargar el código de la promoción, que ya no existe. Las fallas de J y R de la corrida anterior quedaron corregidas en `dev` |
 | 13/11/2026 | Cambio de plan programado y baja programada de un horario con alumnos (PI-97 a PI-99); el historial de la ficha (PI-94) | 351 | 351 aprobados | 136,3 s | Antes de los casos nuevos fallaron G-11, G-12 y G-26, que esperaban las reglas anteriores, y se adaptaron. La migración `programar_cambio_plan_y_baja_horario` se aplicó sobre la base de prueba. Pasaron también los 2794 tests unitarios; chequeo de tipos, formato y build correctos. Las 11 fallas provocadas fueron detectadas, dos después de reforzar G-44 |
 | 21/11/2026 | Datos de la presentación (`db:seed:presentacion`, PI-100) | 373 | 373 aprobados | — | Pasaron también los 2804 tests unitarios; la cobertura global sigue debajo del 100 % por código anterior a este cambio (rutinas, promociones, actividades y asistencia), que también hace fallar el CI desde el 13/11/2026. Chequeo de tipos y formato correctos. Las 2 fallas provocadas fueron detectadas |
+| 24/11/2026 | Plan solo para menores (PI-101) y las clases de hoy al final de la presentación (V-25) | 379 | 379 aprobados | 212,7 s | Pasaron también los 2850 tests unitarios, con cobertura del 100 %; chequeo de tipos y formato correctos. La migración `agregar_plan_solo_menores` se aplicó sobre la base de prueba. Las 2 fallas provocadas fueron detectadas |
+| 25/11/2026 | Actividades para menores (PI-101, G-46)                               | 380 | 380 aprobados | — | Pasaron también los 2854 tests unitarios, con cobertura del 100 %; chequeo de tipos y formato correctos. La migración `agregar_actividad_solo_menores` se aplicó sobre la base de prueba. Las 2 fallas provocadas fueron detectadas |
 
 ### 8.2 Resultado por caso
 
@@ -1948,6 +1971,7 @@ Además, apuntada a la base de desarrollo (`mifr`), las pruebas se negaron a cor
 | PI-100        | 21/11/2026 | Francisco Andrade | Aprobado           | Pasan V-01 a V-21; sin defectos                                                  |
 | PI-100        | 24/11/2026 | Francisco Andrade | Aprobado con observaciones | Pasan V-22 a V-24 (alumnos históricos de los dos años anteriores y franjas de todos los niveles). Falla V-20, igual que con el código anterior al cambio (sección 9) |
 | PI-100        | 24/11/2026 | Francisco Andrade | Aprobado           | Pasan V-01 a V-25 (defecto D-23)                                                  |
+| PI-101        | 25/11/2026 | Francisco Andrade | Aprobado           | Pasan G-45 a G-47; sin defectos                                                   |
 
 ### 8.3 Defectos
 
@@ -2096,3 +2120,5 @@ Los defectos se numeran D-01, D-02…
 |   2.46  | 21/11/2026 | Caso PI-100 (los datos de la presentación recorridos por la API real) y tests V-01 a V-21 | Francisco Andrade |
 |   2.47  | 24/11/2026 | PI-100 suma los alumnos históricos de la presentación: tests V-22 a V-24 (inscripciones de los dos años anteriores y mapa de ocupación con todos los niveles). Punto abierto sobre V-20 en la sección 9 | Francisco Andrade |
 |   2.48  | 24/11/2026 | PI-100: las clases de hoy pasan a un test propio al final del archivo, V-25, para que su cierre automático no le corte la racha a quien dejó de venir; defecto D-23 y punto de V-20 cerrado | Francisco Andrade |
+|   2.49  | 24/11/2026 | Caso PI-101 (un plan solo para menores no admite a quien ya cumplió 18 años) y tests G-45 y G-46; US-05, US-11 y US-14 lo suman | Francisco Andrade |
+|   2.50  | 25/11/2026 | PI-101 suma las actividades para menores: un plan solo para menores ofrece solo esas y no admiten a un mayor; G-46 nuevo y la marca de la propietaria pasa a G-47 | Francisco Andrade |

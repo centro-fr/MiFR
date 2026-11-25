@@ -23,6 +23,7 @@ interface ActividadDemo {
   modalidad: modalidad_actividad;
   cupo_maximo: number | null;
   requiere_medidas: boolean;
+  solo_menores?: boolean;
 }
 
 interface HorarioDemo {
@@ -85,6 +86,7 @@ export const ACTIVIDADES_DEMO: ActividadDemo[] = [
     modalidad: "GRUPAL",
     cupo_maximo: 12,
     requiere_medidas: false,
+    solo_menores: true,
   },
   {
     codigo: "ENTRENAMIENTO_PERS",

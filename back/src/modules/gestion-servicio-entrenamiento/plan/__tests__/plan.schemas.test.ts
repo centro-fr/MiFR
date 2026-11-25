@@ -13,8 +13,12 @@ describe("crearPlanSchema", () => {
     expect(crearPlanSchema.safeParse({ ...mensual, dias_gracia }).success).toBe(false);
   });
 
-  it("completa dias_gracia en 0 y profesora_unica en false si no vienen", () => {
-    expect(crearPlanSchema.parse(mensual)).toMatchObject({ dias_gracia: 0, profesora_unica: false });
+  it("completa dias_gracia en 0, profesora_unica y solo_menores en false si no vienen", () => {
+    expect(crearPlanSchema.parse(mensual)).toMatchObject({
+      dias_gracia: 0,
+      profesora_unica: false,
+      solo_menores: false,
+    });
   });
 
   it("acepta un plan mensual sin frecuencia, como un pase libre", () => {
@@ -55,11 +59,19 @@ describe("crearPlanSchema", () => {
   it("rechaza un tipo que no está en el DER", () => {
     expect(crearPlanSchema.safeParse({ ...mensual, tipo: "ANUAL" }).success).toBe(false);
   });
+
+  it.each(["true", 1, null])("rechaza solo_menores %j, que no es un booleano", (solo_menores) => {
+    expect(crearPlanSchema.safeParse({ ...mensual, solo_menores }).success).toBe(false);
+  });
 });
 
 describe("actualizarPlanSchema", () => {
   it("rechaza un cuerpo vacío", () => {
     expect(actualizarPlanSchema.safeParse({}).success).toBe(false);
+  });
+
+  it("acepta marcar el plan como solo para menores", () => {
+    expect(actualizarPlanSchema.parse({ solo_menores: true })).toEqual({ solo_menores: true });
   });
 
   it("no acepta cambiar el tipo ni el precio", () => {

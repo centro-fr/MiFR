@@ -30,6 +30,7 @@ const planBase: Plan = {
   dias_gracia: 5,
   id_actividad_exclusiva: null,
   profesora_unica: true,
+  solo_menores: false,
   fecha_alta: new Date("2026-10-01T00:00:00Z"),
   fecha_baja: null,
   actividad_exclusiva: null,
@@ -85,6 +86,7 @@ describe("PlanService", () => {
     clases_por_semana: 2,
     dias_gracia: 5,
     profesora_unica: true,
+    solo_menores: false,
     precio: 25000,
   };
 

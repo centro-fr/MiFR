@@ -15,6 +15,7 @@ const clases_por_semana = z.number().int().min(1).max(7).nullable().optional();
 const dias_gracia = enteroNoNegativoSchema(365);
 const id_actividad_exclusiva = idSchema.nullable().optional();
 const profesora_unica = z.boolean();
+const solo_menores = z.boolean();
 
 const precio = montoSchema("precio");
 
@@ -44,6 +45,7 @@ export const crearPlanSchema = z
     dias_gracia: dias_gracia.default(0),
     id_actividad_exclusiva,
     profesora_unica: profesora_unica.default(false),
+    solo_menores: solo_menores.default(false),
     precio,
   })
   .refine(respetaReglaClaseSuelta, { message: MENSAJE_CLASE_SUELTA, path: ["tipo"] });
@@ -58,6 +60,7 @@ export const actualizarPlanSchema = z
     dias_gracia: dias_gracia.optional(),
     id_actividad_exclusiva,
     profesora_unica: profesora_unica.optional(),
+    solo_menores: solo_menores.optional(),
     reactivar: z.literal(true).optional(),
   })
   .refine((data) => Object.keys(data).length > 0, {

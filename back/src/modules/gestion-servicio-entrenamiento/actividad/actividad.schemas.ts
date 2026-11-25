@@ -25,6 +25,8 @@ const modalidad = z.enum(["GRUPAL", "PERSONALIZADA"]);
 const cupo_maximo = z.number().int().positive().max(32767).nullable().optional();
 // US-05: la pre-inscripción en una actividad así exige peso y talla. Sin el campo, no los exige.
 const requiere_medidas = z.boolean().optional();
+// Solo admite alumnos menores de 18 años; los planes solo para menores ofrecen solo estas.
+const solo_menores = z.boolean().optional();
 
 export const crearActividadSchema = z
   .object({
@@ -34,6 +36,7 @@ export const crearActividadSchema = z
     modalidad,
     cupo_maximo,
     requiere_medidas,
+    solo_menores,
   })
   .refine((data) => data.modalidad !== "PERSONALIZADA" || data.cupo_maximo != null, {
     message: "El cupo máximo es obligatorio para la modalidad PERSONALIZADA",
@@ -47,6 +50,7 @@ export const actualizarActividadSchema = z
     modalidad: modalidad.optional(),
     cupo_maximo: cupo_maximo.optional(),
     requiere_medidas,
+    solo_menores,
     reactivar: z.literal(true).optional(),
   })
   .refine((data) => Object.keys(data).length > 0, {

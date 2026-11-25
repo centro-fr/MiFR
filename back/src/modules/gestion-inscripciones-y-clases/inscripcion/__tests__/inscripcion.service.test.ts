@@ -34,18 +34,28 @@ const INICIO_RESERVAS = new Date("2026-10-06T00:00:00Z");
 
 const plan = {
   id_plan: 1,
+  nombre: "Básico",
   tipo: "MENSUAL",
   clases_por_semana: 2,
   profesora_unica: false,
   id_actividad_exclusiva: null,
+  solo_menores: false,
   fecha_baja: null,
 };
+// Cumple 18 el día siguiente a HOY: es el último día en que entra en un plan solo para menores.
+const NACIMIENTO_MENOR = new Date("2008-10-10T00:00:00Z");
+const NACIMIENTO_MAYOR = new Date("2008-10-09T00:00:00Z");
+const datosDelAlumno = { usuario: { fecha_nacimiento: NACIMIENTO_MAYOR } };
 const horario = {
   id_horario: 8,
   id_profesora: 3,
   id_actividad: 4,
   fecha_baja: null,
   actividad: { activo: true, nombre: "Funcional", requiere_medidas: false },
+};
+const horarioInfantil = {
+  ...horario,
+  actividad: { activo: true, nombre: "Kid Fit", requiere_medidas: false, solo_menores: true },
 };
 const horarioQuePideMedidas = {
   ...horario,
@@ -115,7 +125,7 @@ function crearMocks() {
       contarBajasPorMotivo: vi.fn().mockResolvedValue([{ motivo: "ABANDONO", cantidad: 2 }]),
     },
     alumnos: {
-      buscarPorId: vi.fn().mockResolvedValue({ id_alumno: 5, estado: "INACTIVO" }),
+      buscarPorId: vi.fn().mockResolvedValue({ id_alumno: 5, estado: "INACTIVO", ...datosDelAlumno }),
       activar: vi.fn(),
       darDeBaja: vi.fn(),
       reactivar: vi.fn(),
@@ -197,7 +207,8 @@ describe("InscripcionService", () => {
       ["el alumno no existe", () => mocks.alumnos.buscarPorId.mockResolvedValue(null), NotFoundError],
       [
         "el alumno está dado de baja",
-        () => mocks.alumnos.buscarPorId.mockResolvedValue({ id_alumno: 5, estado: "BAJA" }),
+        () =>
+          mocks.alumnos.buscarPorId.mockResolvedValue({ id_alumno: 5, estado: "BAJA", ...datosDelAlumno }),
         NotFoundError,
       ],
       ["el plan no existe", () => mocks.planes.buscarPorId.mockResolvedValue(null), ConflictError],
@@ -327,6 +338,86 @@ describe("InscripcionService", () => {
       mocks.repositorio.crear.mockResolvedValue(resultado);
 
       await expect(servicio.crear(alta, PROPIETARIA)).rejects.toThrow(mensaje);
+    });
+  });
+
+  describe("plan solo para menores", () => {
+    const planKid = { ...plan, nombre: "Kid Fit", solo_menores: true };
+    const alumnoCon = (fecha_nacimiento: Date) => ({
+      id_alumno: 5,
+      estado: "INACTIVO",
+      usuario: { fecha_nacimiento },
+    });
+
+    beforeEach(() => {
+      mocks.planes.buscarPorId.mockResolvedValue(planKid);
+      mocks.horarios.buscarPorIds.mockResolvedValue([horarioInfantil]);
+    });
+
+    it("pre-inscribe a un menor de 18 años", async () => {
+      mocks.alumnos.buscarPorId.mockResolvedValue(alumnoCon(NACIMIENTO_MENOR));
+
+      await expect(servicio.crear(alta, PROPIETARIA)).resolves.toEqual(respuesta);
+    });
+
+    it("rechaza a quien cumple 18 hoy, sin guardar nada", async () => {
+      mocks.alumnos.buscarPorId.mockResolvedValue(alumnoCon(NACIMIENTO_MAYOR));
+
+      await expect(servicio.crear(alta, PROPIETARIA)).rejects.toThrow(
+        new ValidationError("El plan Kid Fit es solo para menores de 18 años"),
+      );
+      expect(mocks.repositorio.crear).not.toHaveBeenCalled();
+    });
+
+    it("rechaza el alumno nuevo mayor de edad antes de darlo de alta", async () => {
+      const { id_alumno: _, ...inscripcionNueva } = alta;
+      const pedido = {
+        alumno: { nombre: "Tomás", apellido: "Pérez", fecha_nacimiento: NACIMIENTO_MAYOR },
+        inscripcion: inscripcionNueva,
+      } as PreinscribirInput;
+
+      await expect(servicio.preinscribir(pedido, PROPIETARIA)).rejects.toThrow(ValidationError);
+      expect(mocks.alumnos.crear).not.toHaveBeenCalled();
+    });
+
+    it("rechaza el cambio de un mayor de edad a un plan solo para menores", async () => {
+      await expect(servicio.cambiarPlan(12, { ...reactivacion, id_plan: 2 })).rejects.toThrow(
+        ValidationError,
+      );
+      expect(mocks.repositorio.cambiarPlan).not.toHaveBeenCalled();
+    });
+
+    it("no le pide edad a un plan común con actividades de adultos", async () => {
+      mocks.planes.buscarPorId.mockResolvedValue(plan);
+      mocks.horarios.buscarPorIds.mockResolvedValue([horario]);
+
+      await expect(servicio.crear(alta, PROPIETARIA)).resolves.toEqual(respuesta);
+    });
+
+    it("rechaza en un plan solo para menores un horario de una actividad de adultos", async () => {
+      mocks.alumnos.buscarPorId.mockResolvedValue(alumnoCon(NACIMIENTO_MENOR));
+      mocks.horarios.buscarPorIds.mockResolvedValue([horario]);
+
+      await expect(servicio.crear(alta, PROPIETARIA)).rejects.toThrow(
+        new ValidationError("El plan Kid Fit solo admite actividades para menores: Funcional no lo es"),
+      );
+      expect(mocks.repositorio.crear).not.toHaveBeenCalled();
+    });
+
+    it("una actividad para menores no admite a un mayor aunque el plan sea común", async () => {
+      mocks.planes.buscarPorId.mockResolvedValue(plan);
+
+      await expect(servicio.crear(alta, PROPIETARIA)).rejects.toThrow(
+        new ValidationError("Kid Fit es solo para menores de 18 años"),
+      );
+      expect(mocks.repositorio.crear).not.toHaveBeenCalled();
+    });
+
+    it("un menor toma una actividad para menores con un plan común", async () => {
+      mocks.planes.buscarPorId.mockResolvedValue(plan);
+      mocks.alumnos.buscarPorId.mockResolvedValue(alumnoCon(NACIMIENTO_MENOR));
+
+      await expect(servicio.crear(alta, PROPIETARIA)).resolves.toEqual(respuesta);
     });
   });
 
@@ -516,7 +607,7 @@ describe("InscripcionService", () => {
       mocks.alumnos.buscarPorId.mockResolvedValueOnce(null);
       await expect(servicio.darDeBajaAlumno(5, { motivo_baja: "OTRO" })).rejects.toThrow(NotFoundError);
 
-      mocks.alumnos.buscarPorId.mockResolvedValueOnce({ id_alumno: 5, estado: "BAJA" });
+      mocks.alumnos.buscarPorId.mockResolvedValueOnce({ id_alumno: 5, estado: "BAJA", ...datosDelAlumno });
       await expect(servicio.darDeBajaAlumno(5, { motivo_baja: "OTRO" })).rejects.toThrow(ConflictError);
       expect(mocks.repositorio.darDeBajaAlumno).not.toHaveBeenCalled();
     });
@@ -524,7 +615,7 @@ describe("InscripcionService", () => {
 
   describe("reactivarAlumno (US-08)", () => {
     beforeEach(() => {
-      mocks.alumnos.buscarPorId.mockResolvedValue({ id_alumno: 5, estado: "BAJA" });
+      mocks.alumnos.buscarPorId.mockResolvedValue({ id_alumno: 5, estado: "BAJA", ...datosDelAlumno });
     });
 
     it("crea una inscripción nueva activa y reactiva al alumno", async () => {
@@ -563,9 +654,9 @@ describe("InscripcionService", () => {
 
     it("no vuelve a reactivar si otra operación ya lo hizo", async () => {
       mocks.alumnos.buscarPorId
-        .mockResolvedValueOnce({ id_alumno: 5, estado: "BAJA" })
-        .mockResolvedValueOnce({ id_alumno: 5, estado: "BAJA" })
-        .mockResolvedValueOnce({ id_alumno: 5, estado: "ACTIVO" });
+        .mockResolvedValueOnce({ id_alumno: 5, estado: "BAJA", ...datosDelAlumno })
+        .mockResolvedValueOnce({ id_alumno: 5, estado: "BAJA", ...datosDelAlumno })
+        .mockResolvedValueOnce({ id_alumno: 5, estado: "ACTIVO", ...datosDelAlumno });
 
       await servicio.reactivarAlumno(5, reactivacion, "ACTIVA");
 
@@ -587,7 +678,7 @@ describe("InscripcionService", () => {
       mocks.alumnos.buscarPorId.mockResolvedValueOnce(null);
       await expect(servicio.reactivarAlumno(5, reactivacion, "ACTIVA")).rejects.toThrow(NotFoundError);
 
-      mocks.alumnos.buscarPorId.mockResolvedValueOnce({ id_alumno: 5, estado: "ACTIVO" });
+      mocks.alumnos.buscarPorId.mockResolvedValueOnce({ id_alumno: 5, estado: "ACTIVO", ...datosDelAlumno });
       await expect(servicio.reactivarAlumno(5, reactivacion, "ACTIVA")).rejects.toThrow(ConflictError);
     });
   });
@@ -864,7 +955,11 @@ describe("InscripcionService", () => {
   });
 
   describe("preinscribir", () => {
-    const alumnoNuevo = { nombre: "Tomás", apellido: "Pérez" } as PreinscribirInput["alumno"];
+    const alumnoNuevo = {
+      nombre: "Tomás",
+      apellido: "Pérez",
+      fecha_nacimiento: NACIMIENTO_MAYOR,
+    } as PreinscribirInput["alumno"];
     const { id_alumno: _, ...inscripcionNueva } = alta;
     const pedido: PreinscribirInput = { alumno: alumnoNuevo, inscripcion: inscripcionNueva };
 

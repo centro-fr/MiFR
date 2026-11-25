@@ -37,6 +37,7 @@ describe("HorarioService", () => {
     modalidad: "GRUPAL" as const,
     cupo_maximo: 20,
     requiere_medidas: false,
+    solo_menores: false,
     activo: true,
   };
   const profesora = {

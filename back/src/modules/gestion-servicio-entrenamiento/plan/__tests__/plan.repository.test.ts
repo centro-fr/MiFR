@@ -72,6 +72,7 @@ describe("PlanRepository", () => {
       clases_por_semana: 2,
       dias_gracia: 5,
       profesora_unica: true,
+      solo_menores: false,
       precio: 25000,
     });
 
@@ -82,6 +83,7 @@ describe("PlanRepository", () => {
         clases_por_semana: 2,
         dias_gracia: 5,
         profesora_unica: true,
+        solo_menores: false,
         fecha_alta: HOY,
         precios: { create: { precio: 25000, fecha_vigencia_desde: HOY } },
       },

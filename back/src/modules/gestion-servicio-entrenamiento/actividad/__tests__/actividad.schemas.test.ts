@@ -76,6 +76,18 @@ describe("requiere_medidas", () => {
   });
 });
 
+describe("solo_menores", () => {
+  it("es opcional y solo acepta booleanos", () => {
+    expect(crearActividadSchema.parse(minimo)).not.toHaveProperty("solo_menores");
+    expect(crearActividadSchema.parse({ ...minimo, solo_menores: true })).toMatchObject({
+      solo_menores: true,
+    });
+    expect(crearActividadSchema.safeParse({ ...minimo, solo_menores: "true" }).success).toBe(false);
+    expect(actualizarActividadSchema.parse({ solo_menores: false })).toEqual({ solo_menores: false });
+    expect(actualizarActividadSchema.safeParse({ solo_menores: 1 }).success).toBe(false);
+  });
+});
+
 describe("actualizarActividadSchema", () => {
   it("permite borrar la descripción mandando un texto vacío", () => {
     expect(actualizarActividadSchema.parse({ descripcion: "" })).toEqual({ descripcion: null });

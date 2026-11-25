@@ -121,6 +121,8 @@ model actividades {
   cupo_maximo      Int?                @db.SmallInt
   // US-05: la pre-inscripción en una actividad así exige peso y talla.
   requiere_medidas Boolean             @default(false)
+  // Solo alumnos menores de 18 años (ej. Kid Fit); los planes solo para menores ofrecen solo estas.
+  solo_menores     Boolean             @default(false)
   activo           Boolean
 
   horarios          horarios[]
@@ -188,6 +190,8 @@ model planes {
   // ej. Plan Kids
   id_actividad_exclusiva Int?
   profesora_unica        Boolean
+  // Solo alumnos menores de 18 años (ej. Kid Fit)
+  solo_menores           Boolean   @default(false)
   fecha_alta             DateTime  @default(now()) @db.Date
   fecha_baja             DateTime? @db.Date
 
