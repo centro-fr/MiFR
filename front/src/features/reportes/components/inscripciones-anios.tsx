@@ -185,7 +185,7 @@ interface PropsMesAMes extends PropsControles {
 export function MesAMes({ datos, cargando, hoy, tablaAbierta, onAlternarTabla, ...controles }: PropsMesAMes) {
   const lectura = cargando ? null : lecturaDelGrafico(datos, controles.metrica, hoy);
   return (
-    <SeccionReporte id="titulo-mes-a-mes" titulo="Mes a mes, año contra año" descripcion={METRICAS[controles.metrica].detalle}>
+    <SeccionReporte id="titulo-comparacion-anios" titulo="Comparación entre años" descripcion={METRICAS[controles.metrica].detalle}>
       <Controles {...controles} />
       <div className="mt-5">
         {cargando ? <Skeleton aria-label="Cargando los años" className="h-48 rounded-xl" /> : <Grafico datos={datos} metrica={controles.metrica} anioElegido={controles.anioElegido} hoy={hoy} />}

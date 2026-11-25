@@ -1,7 +1,7 @@
 import { esMesEnCurso, esMesFuturo } from "@/features/reportes/utils/formato-inscripciones";
 import type { AltasDelMes, BajasDelAnio, EstadisticasInscripciones, MotivoBaja } from "@/types/reportes";
 
-// US-35: lo que arma el gráfico "Mes a mes, año contra año" y la línea "Para tener en cuenta". Todo se
+// US-35: lo que arma el gráfico "Comparación entre años" y la línea "Para tener en cuenta". Todo se
 // calcula con los años que trae el back, uno por pedido. Funciones puras.
 
 export type Metrica = "altas" | "bajas" | "activos";

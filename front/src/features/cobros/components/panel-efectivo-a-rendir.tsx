@@ -307,7 +307,7 @@ export function PanelEfectivoARendir() {
                         Profesor/a
                       </th>
                       <th scope="col" className="px-4 py-3.5">
-                        Cobros en mano
+                        Cobros a rendir
                       </th>
                       <th scope="col" className="px-4 py-3.5">
                         Total a rendir
@@ -375,7 +375,7 @@ export function PanelEfectivoARendir() {
                         </span>
                       }
                       detalle={[
-                        prof.cantidad === 1 ? "1 cobro en mano" : `${prof.cantidad} cobros en mano`,
+                        prof.cantidad === 1 ? "1 cobro a rendir" : `${prof.cantidad} cobros a rendir`,
                         formatearPrecio(prof.total),
                       ]}
                       acciones={

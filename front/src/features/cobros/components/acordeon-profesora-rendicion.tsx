@@ -75,7 +75,7 @@ export function AcordeonProfesoraRendicion({
               )}
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              {profesora.cantidad === 1 ? "1 cobro en mano" : `${profesora.cantidad} cobros en mano`}
+              {profesora.cantidad === 1 ? "1 cobro a rendir" : `${profesora.cantidad} cobros a rendir`}
             </p>
           </div>
         </div>

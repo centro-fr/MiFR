@@ -179,7 +179,7 @@ describe("Páginas de Reportes (Estandarización)", () => {
 
   it("compara mes a mes con el año anterior y suma otro año al elegirlo", () => {
     renderizarConRuta("/app/reportes/inscripciones", <InscripcionesPage />);
-    const seccion = screen.getByRole("region", { name: "Mes a mes, año contra año" });
+    const seccion = screen.getByRole("region", { name: "Comparación entre años" });
     const anioActual = new Date().getFullYear();
 
     expect(within(seccion).getByRole("button", { name: String(anioActual - 1) })).toHaveAttribute("aria-pressed", "true");
@@ -195,7 +195,7 @@ describe("Páginas de Reportes (Estandarización)", () => {
 
   it("cambia lo que compara y resume por qué se van y cuánto se quedan", () => {
     renderizarConRuta("/app/reportes/inscripciones", <InscripcionesPage />);
-    const seccion = screen.getByRole("region", { name: "Mes a mes, año contra año" });
+    const seccion = screen.getByRole("region", { name: "Comparación entre años" });
 
     fireEvent.click(within(seccion).getByRole("tab", { name: "Bajas" }));
     expect(within(seccion).getByText(/abril es el mes con más bajas/)).toBeInTheDocument();
