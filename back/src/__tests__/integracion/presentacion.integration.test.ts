@@ -139,7 +139,6 @@ describe("datos de la presentación", () => {
       "/reportes/ocupacion",
       "/reportes/ranking-asistencia",
       "/informes/alumnos-inactivos",
-      "/clases/hoy",
     ]) {
       const respuesta = await comoPropietaria(ruta);
       expect(respuesta.status, ruta).toBe(200);
@@ -188,5 +187,12 @@ describe("datos de la presentación", () => {
       .set("Authorization", `Bearer ${tutora}`);
     expect(mios.status).toBe(200);
     expect(JSON.stringify(mios.body)).toContain("Benjamín");
+  });
+
+  // Va al final: pedir las clases de hoy cierra las que ya terminaron y, sin marcas, deja presentes a
+  // todos sus inscriptos. A quien dejó de venir y tenía clase hoy le corta la racha del informe de inactivos.
+  it("las clases de hoy responden", async () => {
+    const respuesta = await comoPropietaria("/clases/hoy");
+    expect(respuesta.status).toBe(200);
   });
 });
