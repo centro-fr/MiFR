@@ -4,6 +4,7 @@ import {
   profesorasDelPlan,
   agruparHorariosPorActividad,
   actividadesDelPlan,
+  horariosParaLaEdad,
 } from "../plan-y-profesora";
 import type { HorarioApi } from "@/features/horarios/schemas/horario";
 import type { ProfesoraDatos } from "@/features/horarios/api/horarios-api";
@@ -199,3 +200,25 @@ describe("plan-y-profesora utils", () => {
   });
 });
 
+
+describe("horariosParaLaEdad", () => {
+  const funcional = mockHorario(1, 1, 1, "Funcional", 1);
+  const kidFit = { ...mockHorario(2, 1, 7, "Kid Fit", 2), actividad: { ...mockHorario(2, 1, 7, "Kid Fit", 2).actividad, solo_menores: true } };
+  const todos = [funcional, kidFit];
+
+  it("un plan solo para menores ofrece solo las actividades para menores", () => {
+    expect(horariosParaLaEdad(todos, { solo_menores: true }, true)).toEqual([kidFit]);
+  });
+
+  it("a un mayor no le ofrece las actividades para menores", () => {
+    expect(horariosParaLaEdad(todos, { solo_menores: false }, false)).toEqual([funcional]);
+  });
+
+  it("a un menor con un plan común le ofrece todo", () => {
+    expect(horariosParaLaEdad(todos, { solo_menores: false }, true)).toEqual(todos);
+  });
+
+  it("sin dato de la edad ni plan elegido no descarta nada", () => {
+    expect(horariosParaLaEdad(todos, null)).toEqual(todos);
+  });
+});

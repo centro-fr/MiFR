@@ -372,6 +372,7 @@ export function ActividadesPage() {
                     `Cupo ${textoCupoActividad(actividad.cupoMaximo)}`,
                     cantHorarios > 0 ? `${cantHorarios} horarios por semana` : "Sin horarios",
                     actividad.requiereMedidas ? "Pide peso y altura" : null,
+                    actividad.soloMenores ? "Para menores" : null,
                   ];
                   return (
                     <FilaMovil
@@ -461,6 +462,9 @@ export function ActividadesPage() {
                           <div className="font-extrabold text-sm text-slate-900 dark:text-white">
                             {actividad.nombre}
                           </div>
+                          {actividad.soloMenores && (
+                            <div className="mt-0.5 text-xs font-semibold text-slate-600 dark:text-slate-300">Para menores</div>
+                          )}
                         </TableCell>
 
                         {/* Descripción (columna separada) */}

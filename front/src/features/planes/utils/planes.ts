@@ -114,6 +114,7 @@ export function cambiosDelPlan(plan: Plan, valores: PlanFormValues, actividades:
     nombreActividad(despues.id_actividad_exclusiva, actividades, plan.actividad),
   );
   sumar(despues.profesora_unica !== plan.profesoraUnica, "Profesora", textoProfesora(plan.profesoraUnica), textoProfesora(despues.profesora_unica));
+  sumar(despues.solo_menores !== plan.soloMenores, "Edad", textoEdad(plan.soloMenores), textoEdad(despues.solo_menores));
   sumar(
     despues.clases_por_semana !== plan.clasesPorSemana,
     "Frecuencia",
@@ -128,4 +129,8 @@ export function cambiosDelPlan(plan: Plan, valores: PlanFormValues, actividades:
 // inscripcion.service.ts); profesora_unica solo agrega que sea la que está a cargo del alumno.
 export function textoProfesora(profesoraUnica: boolean): string {
   return profesoraUnica ? "La profesora a cargo" : "Puede ser otra profesora";
+}
+
+export function textoEdad(soloMenores: boolean): string {
+  return soloMenores ? "Solo menores de 18 años" : "Cualquier edad";
 }

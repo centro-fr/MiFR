@@ -257,6 +257,7 @@ describe('US-03: ModalFormActividad', () => {
     fireEvent.change(screen.getByLabelText(/Descripción/i), { target: { value: 'Nueva descripción' } });
     fireEvent.change(screen.getByRole('spinbutton', { name: /Cupo máximo/i }), { target: { value: '25' } });
     fireEvent.click(screen.getByRole('checkbox', { name: /Pide peso y altura al inscribirse/i }));
+    fireEvent.click(screen.getByRole('checkbox', { name: /Solo para menores de 18 años/i }));
 
     fireEvent.click(screen.getByRole('button', { name: /Guardar actividad/i }));
 
@@ -266,6 +267,7 @@ describe('US-03: ModalFormActividad', () => {
         descripcion: 'Nueva descripción',
         cupoMaximo: 25,
         requiereMedidas: true,
+        soloMenores: true,
         modalidad: 'GRUPAL',
       }));
     });

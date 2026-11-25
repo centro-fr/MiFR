@@ -31,6 +31,7 @@ const PLAN: Plan = {
   diasGracia: 5,
   actividad: null,
   profesoraUnica: false,
+  soloMenores: false,
   precioVigente: 25000,
   precioVigenteDesde: "2026-01-01T00:00:00.000Z",
   precioProgramado: null,

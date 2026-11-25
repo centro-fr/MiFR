@@ -23,6 +23,8 @@ export interface Plan {
   actividad: ActividadDelPlan | null;
   /** El alumno toma todas sus clases con la profesora a cargo de la inscripción. */
   profesoraUnica: boolean;
+  /** Solo admite alumnos menores de 18 años (ej. Kid Fit). */
+  soloMenores: boolean;
   /** null solo si el plan todavía no tiene un precio que rija hoy. */
   precioVigente: number | null;
   /** Fecha desde la que rige el precio vigente. */
@@ -66,6 +68,7 @@ export interface PlanApiRespuesta {
   dias_gracia: number;
   id_actividad_exclusiva: number | null;
   profesora_unica: boolean;
+  solo_menores: boolean;
   activo: boolean;
   actividad_exclusiva?: PlanActividadExclusiva | null;
   precio_vigente: PrecioPlan | null;

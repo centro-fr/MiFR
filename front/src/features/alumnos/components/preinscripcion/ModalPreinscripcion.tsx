@@ -173,6 +173,7 @@ export function ModalPreinscripcion({
                 <div className="space-y-5">
                   <Paso2PlanYHorarios
                     planes={planes}
+                    menorDeEdad={menorDeEdad}
                     profesoras={profesoras}
                     horarios={horarios}
                     idPlanSeleccionado={idPlan}

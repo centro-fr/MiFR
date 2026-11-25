@@ -33,6 +33,7 @@ export const planApiSchema = z.object({
   dias_gracia: z.number().int(),
   id_actividad_exclusiva: z.number().int().nullable(),
   profesora_unica: z.boolean(),
+  solo_menores: z.boolean(),
   fecha_baja: z.string().nullable(),
   actividad_exclusiva: z
     .object({ id_actividad: z.number().int(), nombre: z.string(), modalidad: z.enum(["GRUPAL", "PERSONALIZADA"]) })
@@ -63,6 +64,7 @@ export interface PlanFormValues {
   /** "" = cualquier actividad. */
   idActividad: string;
   profesoraUnica: boolean;
+  soloMenores: boolean;
   frecuencia: FrecuenciaElegida;
   diasGracia: string;
 }
@@ -111,6 +113,7 @@ export function crearPlanFormSchema({ editando }: { editando: boolean }) {
       precio: z.string(),
       idActividad: z.string().regex(/^(\d+)?$/),
       profesoraUnica: z.boolean(),
+      soloMenores: z.boolean(),
       frecuencia: z.string(),
       diasGracia: z.string().trim(),
     })
@@ -185,6 +188,7 @@ export interface DatosEditablesBody {
   dias_gracia: number;
   id_actividad_exclusiva: number | null;
   profesora_unica: boolean;
+  solo_menores: boolean;
 }
 
 export type ActualizarPlanBody = Partial<DatosEditablesBody>;
@@ -204,6 +208,7 @@ export function aDatosEditables(valores: PlanFormValues): DatosEditablesBody {
     dias_gracia: esMensual ? Number(valores.diasGracia) : 0,
     id_actividad_exclusiva: valores.idActividad ? Number(valores.idActividad) : null,
     profesora_unica: valores.profesoraUnica,
+    solo_menores: valores.soloMenores,
   };
 }
 
@@ -219,6 +224,7 @@ function datosEditablesDe(plan: Plan): DatosEditablesBody {
     dias_gracia: plan.diasGracia,
     id_actividad_exclusiva: plan.actividad ? Number(plan.actividad.id) : null,
     profesora_unica: plan.profesoraUnica,
+    solo_menores: plan.soloMenores,
   };
 }
 
@@ -243,6 +249,7 @@ export function valoresDelPlan(plan: Plan): PlanFormValues {
     precio: plan.precioVigente === null ? "" : plan.precioVigente.toLocaleString("es-AR"),
     idActividad: plan.actividad?.id ?? "",
     profesoraUnica: plan.profesoraUnica,
+    soloMenores: plan.soloMenores,
     frecuencia: plan.tipo === "CLASE_SUELTA" ? "" : plan.clasesPorSemana === null ? "LIBRE" : (String(plan.clasesPorSemana) as FrecuenciaElegida),
     diasGracia: String(plan.diasGracia),
   };
@@ -255,6 +262,7 @@ export const VALORES_PLAN_NUEVO: PlanFormValues = {
   precio: "",
   idActividad: "",
   profesoraUnica: false,
+  soloMenores: false,
   frecuencia: "",
   // El mismo valor por defecto que crearPlanSchema del back.
   diasGracia: "0",

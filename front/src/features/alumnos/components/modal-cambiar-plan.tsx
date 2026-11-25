@@ -27,6 +27,7 @@ interface Props {
   inscripcion: InscripcionDeAlumno;
   inscripciones?: InscripcionDeAlumno[];
   tienePlanVigente?: boolean;
+  menorDeEdad?: boolean;
   onClose: () => void;
 }
 
@@ -42,6 +43,7 @@ function tieneGraciaVigente(inscripcion: InscripcionDeAlumno): boolean {
 export function ModalCambiarPlan({
   nombre,
   inscripcion,
+  menorDeEdad,
   inscripciones,
   tienePlanVigente = false,
   onClose,
@@ -261,6 +263,7 @@ export function ModalCambiarPlan({
             </div>
           ) : (
             <Paso2PlanYHorarios
+              menorDeEdad={menorDeEdad}
               planes={planes}
               profesoras={profesoras}
               horarios={horariosElegibles}

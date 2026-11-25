@@ -30,6 +30,7 @@ import {
 import { nombreRepetido } from "@/features/planes/utils/planes";
 import type { Plan } from "@/types/plan";
 import { cn } from "@/utils/cn";
+import { CasillaSoloMenores } from "@/features/planes/components/casilla-solo-menores";
 import { formatearPrecio } from "@/utils/moneda";
 import {
   CABECERA_MODAL,
@@ -94,7 +95,8 @@ export function EditarPlanDialog({ plan, onClose, onExito }: PropsEditarPlanDial
       ? !Number.isNaN(nuevoPrecioNum) && nuevoPrecioNum > 0
       : !Number.isNaN(nuevoPrecioNum) && nuevoPrecioNum !== plan.precioVigente;
   const nombreCambio = valores.nombre.trim() !== plan.nombre;
-  const sinCambios = !precioCambio && !nombreCambio;
+  const soloMenoresCambio = valores.soloMenores !== plan.soloMenores;
+  const sinCambios = !precioCambio && !nombreCambio && !soloMenoresCambio;
   const estaCargando = guardando || actualizar.isPending || registrarPrecio.isPending;
 
   const cambiar = (cambio: Partial<PlanFormValues>) => {
@@ -138,9 +140,12 @@ export function EditarPlanDialog({ plan, onClose, onExito }: PropsEditarPlanDial
         ? !Number.isNaN(nuevoPrecio) && nuevoPrecio > 0
         : !Number.isNaN(nuevoPrecio) && nuevoPrecio !== plan.precioVigente;
 
-    const cambios: { nombre?: string } = {};
+    const cambios: { nombre?: string; solo_menores?: boolean } = {};
     if (valoresAGuardar.nombre.trim() !== plan.nombre) {
       cambios.nombre = valoresAGuardar.nombre.trim();
+    }
+    if (valoresAGuardar.soloMenores !== plan.soloMenores) {
+      cambios.solo_menores = valoresAGuardar.soloMenores;
     }
     const hayCambios = Object.keys(cambios).length > 0;
 
@@ -189,7 +194,7 @@ export function EditarPlanDialog({ plan, onClose, onExito }: PropsEditarPlanDial
               Editar plan
             </DialogTitle>
             <DialogDescription className={DESCRIPCION_MODAL}>
-              Modificá el nombre o el precio del plan.
+              Modificá el nombre, el precio o la edad del plan.
             </DialogDescription>
           </DialogHeader>
 
@@ -219,6 +224,12 @@ export function EditarPlanDialog({ plan, onClose, onExito }: PropsEditarPlanDial
                   </p>
                 )}
               </div>
+
+              <CasillaSoloMenores
+                id="plan-solo-menores"
+                marcada={valores.soloMenores}
+                onCambiar={(soloMenores) => cambiar({ soloMenores })}
+              />
 
               {/* Precio y Fecha de vigencia */}
               <div className={FILA_DE_CAMPOS_MODAL}>

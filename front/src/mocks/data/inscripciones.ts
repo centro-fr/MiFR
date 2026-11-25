@@ -11,6 +11,7 @@ export interface PlanMock {
   dias_gracia: number;
   id_actividad_exclusiva: number | null;
   profesora_unica: boolean;
+  solo_menores: boolean;
   fecha_alta: string;
   fecha_baja: string | null;
 }
@@ -69,17 +70,21 @@ export interface PagoMock {
 
 const VIGENCIA_PRECIOS = "2026-01-01T00:00:00.000Z";
 
-function plan(id_plan: number, datos: Pick<PlanMock, "tipo" | "nombre" | "clases_por_semana" | "dias_gracia" | "profesora_unica" | "id_actividad_exclusiva">): PlanMock {
-  return { id_plan, descripcion: null, fecha_alta: VIGENCIA_PRECIOS, fecha_baja: null, ...datos };
+function plan(
+  id_plan: number,
+  datos: Pick<PlanMock, "tipo" | "nombre" | "clases_por_semana" | "dias_gracia" | "profesora_unica" | "id_actividad_exclusiva"> &
+    Partial<Pick<PlanMock, "solo_menores">>,
+): PlanMock {
+  return { id_plan, descripcion: null, solo_menores: false, fecha_alta: VIGENCIA_PRECIOS, fecha_baja: null, ...datos };
 }
 
-// El catálogo del centro: "Plan Kids" es exclusivo de la clase infantil (la 7 en semilla.ts).
+// El catálogo del centro: "Plan Kids" es exclusivo de la clase infantil (la 7 en semilla.ts) y solo admite menores.
 export const PLANES_SEMILLA: PlanMock[] = [
   plan(1, { tipo: "MENSUAL", nombre: "Plan Básico", clases_por_semana: 2, dias_gracia: 5, profesora_unica: false, id_actividad_exclusiva: null }),
   plan(2, { tipo: "MENSUAL", nombre: "Plan Intermedio", clases_por_semana: 3, dias_gracia: 5, profesora_unica: false, id_actividad_exclusiva: null }),
   plan(3, { tipo: "MENSUAL", nombre: "Plan 5 días", clases_por_semana: 5, dias_gracia: 5, profesora_unica: false, id_actividad_exclusiva: null }),
   plan(4, { tipo: "MENSUAL", nombre: "Plan Premium", clases_por_semana: 5, dias_gracia: 5, profesora_unica: false, id_actividad_exclusiva: null }),
-  plan(5, { tipo: "MENSUAL", nombre: "Plan Kids", clases_por_semana: 2, dias_gracia: 5, profesora_unica: false, id_actividad_exclusiva: 7 }),
+  plan(5, { tipo: "MENSUAL", nombre: "Plan Kids", clases_por_semana: 2, dias_gracia: 5, profesora_unica: false, id_actividad_exclusiva: 7, solo_menores: true }),
   plan(6, { tipo: "CLASE_SUELTA", nombre: "Clase particular", clases_por_semana: null, dias_gracia: 0, profesora_unica: false, id_actividad_exclusiva: null }),
 ];
 

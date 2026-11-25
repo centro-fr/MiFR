@@ -2,13 +2,15 @@ import { useMemo, useState, useEffect } from "react";
 import { Check } from "lucide-react";
 import { cn } from "@/utils/cn";
 import { Label } from "@/components/ui/label";
-import { actividadesDelPlan, clasesRequeridasDelPlan } from "../../utils/plan-y-profesora";
+import { actividadesDelPlan, clasesRequeridasDelPlan, horariosParaLaEdad } from "../../utils/plan-y-profesora";
 import type { PlanApiRespuesta } from "@/types/plan";
 import type { ProfesoraDatos } from "@/features/horarios/api/horarios-api";
 import type { HorarioApi } from "@/features/horarios/schemas/horario";
 
 interface Paso2PlanYHorariosProps {
   planes: PlanApiRespuesta[];
+  /** Sin dato de la edad se ofrecen todos los planes; el back igual valida. */
+  menorDeEdad?: boolean;
   profesoras: ProfesoraDatos[];
   horarios: HorarioApi[];
   idPlanSeleccionado: number | null;
@@ -39,8 +41,9 @@ function extraerHora(horaStr: string): string {
 
 export function Paso2PlanYHorarios({
   planes,
+  menorDeEdad,
   profesoras,
-  horarios,
+  horarios: todosLosHorarios,
   idPlanSeleccionado,
   onSeleccionarPlan,
   idProfesoraSeleccionada,
@@ -51,9 +54,21 @@ export function Paso2PlanYHorarios({
   onLimpiarHorarios,
   clasesRequeridas,
 }: Paso2PlanYHorariosProps) {
+  // A un mayor de edad no se le ofrecen los planes solo para menores: el back igual los rechaza. Las
+  // reglas de actividades usan todos los planes, para que Kid Fit no aparezca en un plan general.
+  const planesOfrecidos = useMemo(
+    () => planes.filter((plan) => menorDeEdad !== false || !plan.solo_menores),
+    [planes, menorDeEdad],
+  );
+
   const planActual = useMemo(
     () => planes.find((p) => p.id_plan === idPlanSeleccionado) ?? null,
     [planes, idPlanSeleccionado],
+  );
+
+  const horarios = useMemo(
+    () => horariosParaLaEdad(todosLosHorarios, planActual, menorDeEdad),
+    [todosLosHorarios, planActual, menorDeEdad],
   );
 
   // 1. Actividades compatibles según el plan seleccionado y los horarios disponibles
@@ -146,7 +161,7 @@ export function Paso2PlanYHorarios({
         </Label>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-3">
-          {planes.map((p) => {
+          {planesOfrecidos.map((p) => {
             const isSelected = idPlanSeleccionado === p.id_plan;
             const precio = p.precio_vigente?.precio;
             const esClaseParticular = p.tipo === "CLASE_SUELTA" || p.clases_por_semana === 1;

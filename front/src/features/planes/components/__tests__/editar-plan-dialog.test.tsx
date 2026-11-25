@@ -12,6 +12,7 @@ const mockPlan: Plan = {
   diasGracia: 5,
   actividad: { id: "10", nombre: "Kid Fit", modalidad: "GRUPAL" },
   profesoraUnica: true,
+  soloMenores: false,
   precioVigente: 22000,
   precioVigenteDesde: "2026-07-01T00:00:00.000Z",
   precioProgramado: null,
@@ -109,6 +110,30 @@ describe("EditarPlanDialog", () => {
     expect(screen.getByText("Ingresá el nombre del plan.")).toBeInTheDocument();
     expect(mockActualizarAsync).not.toHaveBeenCalled();
     expect(mockRegistrarPrecioAsync).not.toHaveBeenCalled();
+  });
+
+  it("marca el plan como solo para menores y manda solo ese cambio", async () => {
+    render(<EditarPlanDialog plan={mockPlan} onClose={onClose} />);
+
+    fireEvent.click(screen.getByRole("checkbox", { name: /Solo para menores de 18 años/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
+
+    await waitFor(() => {
+      expect(mockActualizarAsync).toHaveBeenCalledWith({ id: "2", cambios: { solo_menores: true } });
+    });
+    expect(mockRegistrarPrecioAsync).not.toHaveBeenCalled();
+  });
+
+  it("no manda la marca si solo cambia el nombre", async () => {
+    render(<EditarPlanDialog plan={{ ...mockPlan, soloMenores: true }} onClose={onClose} />);
+    expect(screen.getByRole("checkbox", { name: /Solo para menores de 18 años/ })).toBeChecked();
+
+    fireEvent.change(screen.getByLabelText(/Nombre \*/i), { target: { value: "Kids Avanzado" } });
+    fireEvent.click(screen.getByRole("button", { name: "Guardar cambios" }));
+
+    await waitFor(() => {
+      expect(mockActualizarAsync).toHaveBeenCalledWith({ id: "2", cambios: { nombre: "Kids Avanzado" } });
+    });
   });
 
   it("envía las modificaciones de nombre al hacer clic en Guardar cambios", async () => {

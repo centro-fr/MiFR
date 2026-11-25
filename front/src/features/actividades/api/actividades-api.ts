@@ -19,6 +19,7 @@ export function aActividad(api: ActividadApi): Actividad {
     cupoMaximo: api.cupo_maximo,
     activo: api.activo,
     requiereMedidas: api.requiere_medidas ?? false,
+    soloMenores: api.solo_menores ?? false,
   };
 }
 
@@ -42,6 +43,7 @@ function aCuerpo(datos: ActividadFormData): ActualizarActividadBody {
     modalidad: datos.modalidad,
     cupo_maximo: datos.cupoMaximo,
     requiere_medidas: datos.requiereMedidas,
+    solo_menores: datos.soloMenores,
   };
 }
 

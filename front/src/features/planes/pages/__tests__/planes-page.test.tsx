@@ -32,6 +32,7 @@ const mockPlanes: Plan[] = [
     diasGracia: 5,
     actividad: null,
     profesoraUnica: false,
+    soloMenores: false,
     precioVigente: 25000,
     precioVigenteDesde: "2026-07-01T00:00:00.000Z",
     precioProgramado: null,
@@ -46,6 +47,7 @@ const mockPlanes: Plan[] = [
     diasGracia: 5,
     actividad: null,
     profesoraUnica: false,
+    soloMenores: false,
     precioVigente: 30000,
     precioVigenteDesde: "2026-07-01T00:00:00.000Z",
     precioProgramado: {
@@ -63,6 +65,7 @@ const mockPlanes: Plan[] = [
     diasGracia: 5,
     actividad: null,
     profesoraUnica: false,
+    soloMenores: false,
     precioVigente: 15000,
     precioVigenteDesde: "2025-01-01T00:00:00.000Z",
     precioProgramado: null,

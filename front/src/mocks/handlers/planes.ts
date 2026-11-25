@@ -31,6 +31,7 @@ const editablesSchema = z.object({
   dias_gracia: z.number().int().min(0).max(365),
   id_actividad_exclusiva: z.number().int().positive().nullable().optional(),
   profesora_unica: z.boolean(),
+  solo_menores: z.boolean().optional(),
 });
 
 const crearSchema = editablesSchema.extend({
@@ -188,6 +189,7 @@ export const planesHandlers = [
       dias_gracia: datos.dias_gracia,
       id_actividad_exclusiva: datos.id_actividad_exclusiva ?? null,
       profesora_unica: datos.profesora_unica,
+      solo_menores: datos.solo_menores ?? false,
       fecha_alta: ahora,
       fecha_baja: null,
     };

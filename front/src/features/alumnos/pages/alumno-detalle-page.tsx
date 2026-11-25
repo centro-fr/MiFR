@@ -49,6 +49,7 @@ import { ModalRegistrarCobro } from "@/features/cobros/components/modal-registra
 import { ModalElegirPlanACobrar } from "@/features/alumnos/components/cobro-por-plan";
 import { datosDeCobro } from "@/features/alumnos/utils/cobro-de-inscripcion";
 import { RutinaYProgreso } from "@/features/rutinas/components/rutina-y-progreso";
+import { esMenorDeEdad } from "@/features/alumnos/utils/edad";
 
 type SeccionFicha = "datos" | "plan" | "progreso" | "cobros" | "asistencia";
 
@@ -631,6 +632,7 @@ export function AlumnoDetallePage() {
                 inscripcion={alumno.inscripcion}
                 inscripciones={alumno.inscripciones ?? (alumno.inscripcion ? [alumno.inscripcion] : [])}
                 tienePlanVigente={Boolean(alumno.estado === "ACTIVO" && alumno.inscripcion && alumno.inscripcion.estado !== "BAJA")}
+                menorDeEdad={esMenorDeEdad(alumno.usuario.fecha_nacimiento)}
                 onClose={() => setModalPlanHorariosAbierto(false)}
               />
             )}
@@ -690,6 +692,7 @@ export function AlumnoDetallePage() {
                 idAlumno={alumno.id_alumno}
                 nombre={nombreCompleto}
                 deuda={deudaAlIrse(alumno.inscripciones_de_la_baja)}
+                menorDeEdad={esMenorDeEdad(alumno.usuario.fecha_nacimiento)}
                 onClose={() => {
                   setModalReactivarAbierto(false);
                   void consulta.refetch();

@@ -4,6 +4,8 @@ import { db } from "@/mocks/db";
 import type { EstadoInscripcionMock, InscripcionMock } from "@/mocks/data/inscripciones";
 import { errorApi, idDeRuta, idInvalido, usuarioDeLaSesion, verificarAcceso } from "@/mocks/handlers/respuestas";
 import {
+  errorDeActividadesParaLaEdad,
+  errorDeEdadParaElPlan,
   errorDeHorarios,
   guardarInscripcion,
   idsHorariosSchema,
@@ -136,7 +138,10 @@ export const inscripcionesHandlers = [
     if (vigentesDe(datos.id_alumno).some((i) => i.id_plan === datos.id_plan)) {
       return errorApi(409, "CONFLICT", "El alumno ya tiene una inscripción vigente para ese plan");
     }
-    const error = errorDeHorarios(datos);
+    const error =
+      errorDeEdadParaElPlan(datos.id_plan, datos.id_alumno) ??
+      errorDeHorarios(datos) ??
+      errorDeActividadesParaLaEdad(datos.id_plan, datos.ids_horarios, datos.id_alumno);
     if (error) return error;
 
     const inscripcion = guardarInscripcion(datos.id_alumno, datos, "PREINSCRIPTA", datos.fecha_inicio ?? hoy);
@@ -176,7 +181,10 @@ export const inscripcionesHandlers = [
     const actual = inscripcionVigente(params);
     if (actual instanceof Response) return actual;
     if (actual.id_plan === cuerpo.data.id_plan) return errorApi(409, "CONFLICT", "La inscripción ya tiene el plan seleccionado");
-    const error = errorDeHorarios(cuerpo.data, actual.id_inscripcion);
+    const error =
+      errorDeEdadParaElPlan(cuerpo.data.id_plan, actual.id_alumno) ??
+      errorDeHorarios(cuerpo.data, actual.id_inscripcion) ??
+      errorDeActividadesParaLaEdad(cuerpo.data.id_plan, cuerpo.data.ids_horarios, actual.id_alumno);
     if (error) return error;
 
     const aplicacion = fechaDelCambioProgramado(actual);

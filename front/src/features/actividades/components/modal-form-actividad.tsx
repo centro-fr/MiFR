@@ -48,6 +48,7 @@ export function ModalFormActividad({
   const [modalidad, setModalidad] = useState<ModalidadActividad>(actividad?.modalidad ?? "GRUPAL");
   const [cupo, setCupo] = useState(actividad?.cupoMaximo?.toString() ?? "");
   const [pidePesoTalla, setPidePesoTalla] = useState(actividad?.requiereMedidas ?? false);
+  const [paraMenores, setParaMenores] = useState(actividad?.soloMenores ?? false);
   const activa = actividad?.activo ?? true;
   const [errores, setErrores] = useState<ErroresCampo>({});
 
@@ -76,6 +77,7 @@ export function ModalFormActividad({
       modalidad,
       cupoMaximo: cupoNumerico,
       requiereMedidas: pidePesoTalla,
+      soloMenores: paraMenores,
       activo: activa,
     });
 
@@ -305,6 +307,30 @@ export function ModalFormActividad({
             <div className="cursor-pointer select-none" onClick={() => setPidePesoTalla(!pidePesoTalla)}>
               <span className="block text-sm font-bold text-slate-900 dark:text-white">
                 Pide peso y altura al inscribirse
+              </span>
+            </div>
+          </div>
+
+          {/* Checkbox Para menores: los planes solo para menores ofrecen solo estas actividades */}
+          <div className="flex items-center gap-3 pt-1">
+            <button
+              type="button"
+              role="checkbox"
+              aria-label="Solo para menores de 18 años"
+              aria-checked={paraMenores}
+              onClick={() => setParaMenores(!paraMenores)}
+              className={cn(
+                "flex size-5 shrink-0 items-center justify-center rounded-md border-2 transition-colors",
+                paraMenores
+                  ? "border-primary bg-primary text-white"
+                  : "border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-900",
+              )}
+            >
+              {paraMenores && <Check className="size-3.5 stroke-[3]" />}
+            </button>
+            <div className="cursor-pointer select-none" onClick={() => setParaMenores(!paraMenores)}>
+              <span className="block text-sm font-bold text-slate-900 dark:text-white">
+                Solo para menores de 18 años
               </span>
             </div>
           </div>

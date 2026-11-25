@@ -4,6 +4,7 @@ import { aDatosEditables, precioDesdeTexto, type PlanFormValues } from "@/featur
 import {
   ETIQUETA_TIPO_PLAN,
   textoDiasGracia,
+  textoEdad,
   textoFrecuencia,
   type CambioDelPlan,
 } from "@/features/planes/utils/planes";
@@ -62,6 +63,7 @@ export function ResumenPlan({ valores, actividades, cambios }: Props) {
       <dl>
         <Dato etiqueta="Modalidad">{valores.tipo ? ETIQUETA_TIPO_PLAN[valores.tipo] : "—"}</Dato>
         <Dato etiqueta="Actividad">{actividad?.nombre ?? "Cualquiera"}</Dato>
+        <Dato etiqueta="Edad">{textoEdad(valores.soloMenores)}</Dato>
         <Dato etiqueta="Frecuencia">{esMensual && !valores.frecuencia ? "—" : textoFrecuencia(valores.tipo, datos.clases_por_semana)}</Dato>
         {esMensual && <Dato etiqueta="Vencimiento">{/^\d+$/.test(valores.diasGracia) ? textoDiasGracia(datos.dias_gracia) : "—"}</Dato>}
       </dl>

@@ -21,6 +21,7 @@ export function aPlan(api: PlanApi): Plan {
     diasGracia: api.dias_gracia,
     actividad: actividad && { id: String(actividad.id_actividad), nombre: actividad.nombre, modalidad: actividad.modalidad },
     profesoraUnica: api.profesora_unica,
+    soloMenores: api.solo_menores,
     precioVigente: api.precio_vigente?.precio ?? null,
     precioVigenteDesde: api.precio_vigente?.fecha_vigencia_desde ?? null,
     precioProgramado: api.precio_programado && {

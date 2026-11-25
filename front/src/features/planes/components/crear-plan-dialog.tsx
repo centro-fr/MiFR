@@ -28,6 +28,7 @@ import {
 } from "@/features/planes/schemas/plan";
 import { estaVigente } from "@/features/planes/utils/planes";
 import { cn } from "@/utils/cn";
+import { CasillaSoloMenores } from "@/features/planes/components/casilla-solo-menores";
 import { CABECERA_MODAL, CAMPO_MODAL, CONTENIDO_MODAL, CUERPO_MODAL, DESCRIPCION_MODAL, FILA_DE_CAMPOS_MODAL, PIE_MODAL, TITULO_MODAL } from "@/components/ui/estilos-modal";
 import { bloquearPegadoNoNumerico, bloquearTeclasNoNumericas, soloDigitos } from "@/utils/entrada-numerica";
 
@@ -60,6 +61,7 @@ export function CrearPlanDialog({ abierto, onClose, onExito }: PropsCrearPlanDia
     precio: "",
     idActividad: "",
     profesoraUnica: true,
+    soloMenores: false,
     frecuencia: "2",
     diasGracia: "5",
   });
@@ -312,6 +314,7 @@ export function CrearPlanDialog({ abierto, onClose, onExito }: PropsCrearPlanDia
             </div>
           </div>
 
+          <CasillaSoloMenores id="nuevo-plan-solo-menores" marcada={valores.soloMenores} onCambiar={(soloMenores) => cambiar({ soloMenores })} />
           </div>
 
           <DialogFooter className={PIE_MODAL}>

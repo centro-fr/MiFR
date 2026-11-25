@@ -15,6 +15,8 @@ export const actividadApiSchema = z.object({
   // US-05: la pre-inscripción en esta actividad exige peso y talla. El back siempre lo manda;
   // sin el dato (datos de prueba anteriores al campo) se toma como que no las pide.
   requiere_medidas: z.boolean().optional(),
+  // Solo admite alumnos menores de 18 años (ej. Kid Fit); sin el dato se toma como que no.
+  solo_menores: z.boolean().optional(),
 });
 
 export type ActividadApi = z.infer<typeof actividadApiSchema>;
@@ -64,6 +66,7 @@ export const actividadFormSchema = z
     modalidad: modalidadActividadSchema,
     cupoMaximo: cupoMaximoSchema,
     requiereMedidas: z.boolean().optional().default(false),
+    soloMenores: z.boolean().optional().default(false),
     activo: z.boolean().optional().default(true),
   })
   .refine((datos) => datos.modalidad !== "PERSONALIZADA" || datos.cupoMaximo !== null, {
@@ -100,6 +103,7 @@ export interface CrearActividadBody {
   modalidad: ActividadApi["modalidad"];
   cupo_maximo: number | null;
   requiere_medidas?: boolean;
+  solo_menores?: boolean;
 }
 
 // El código no se puede cambiar: el back no lo acepta en el PATCH.

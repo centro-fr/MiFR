@@ -97,6 +97,8 @@ export const actividadesHandlers = [
       modalidad: datos.modalidad,
       cupo_maximo: datos.cupo_maximo ?? null,
       activo: true,
+      requiere_medidas: datos.requiere_medidas ?? false,
+      solo_menores: datos.solo_menores ?? false,
     };
     db.actividades.push(nueva);
     return HttpResponse.json(nueva, { status: 201 });
@@ -151,6 +153,7 @@ export const actividadesHandlers = [
       modalidad,
       cupo_maximo: cupo,
       ...(cambios.requiere_medidas !== undefined ? { requiere_medidas: cambios.requiere_medidas } : {}),
+      ...(cambios.solo_menores !== undefined ? { solo_menores: cambios.solo_menores } : {}),
     });
     return HttpResponse.json(actividad);
   }),

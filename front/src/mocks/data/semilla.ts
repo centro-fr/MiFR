@@ -201,6 +201,7 @@ export const ACTIVIDADES_SEMILLA: ActividadApi[] = [
     modalidad: "GRUPAL",
     cupo_maximo: 12,
     activo: true,
+    solo_menores: true,
   },
   {
     id_actividad: 8,

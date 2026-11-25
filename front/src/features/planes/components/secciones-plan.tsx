@@ -2,6 +2,7 @@ import { Info, TriangleAlert } from "lucide-react";
 import { SelectorDesplegable } from "@/components/formulario/selector-desplegable";
 import { BadgeModalidad } from "@/features/planes/components/badges-plan";
 import { CampoPlan, SeccionPlan } from "@/features/planes/components/campo-plan";
+import { CasillaSoloMenores } from "@/features/planes/components/casilla-solo-menores";
 import { CLASE_CONTROL } from "@/features/planes/components/estilos";
 import {
   LARGO_MAXIMO_NOMBRE,
@@ -170,6 +171,7 @@ export function SeccionActividad({ valores, errores, onChange, actividades }: Pr
         </div>
       </div>
       <AvisoModalidad actividad={actividad} />
+      <CasillaSoloMenores id="plan-solo-menores" marcada={valores.soloMenores} onCambiar={(soloMenores) => onChange({ soloMenores })} />
     </SeccionPlan>
   );
 }

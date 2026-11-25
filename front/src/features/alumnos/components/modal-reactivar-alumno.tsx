@@ -36,6 +36,7 @@ interface Props {
   nombre: string;
   /** Lo que debía el día de la baja (US-08): se advierte antes de reactivarlo. */
   deuda: DeudaAlIrse | null;
+  menorDeEdad?: boolean;
   onClose: () => void;
 }
 
@@ -45,7 +46,7 @@ function mensajeAlReactivar(nombre: string, estado: EstadoAlReactivar): string {
     : `${nombre} quedó preinscripto (se confirma con el pago).`;
 }
 
-export function ModalReactivarAlumno({ idAlumno, nombre, deuda, onClose }: Props) {
+export function ModalReactivarAlumno({ idAlumno, nombre, deuda, menorDeEdad, onClose }: Props) {
   const reactivar = useReactivarAlumno();
 
   // Consultas de datos para plan, actividad y horarios
@@ -213,6 +214,7 @@ export function ModalReactivarAlumno({ idAlumno, nombre, deuda, onClose }: Props
           ) : (
             <div className="space-y-5">
               <Paso2PlanYHorarios
+                menorDeEdad={menorDeEdad}
                 planes={planes}
                 profesoras={profesoras}
                 horarios={horarios}

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { db, siguienteId } from "@/mocks/db";
+import { edad, MAYORIA_DE_EDAD } from "@/mocks/edad";
 import { hoyEnArgentina, precioVigenteDePlan } from "@/mocks/precios";
 import type { InscripcionMock } from "@/mocks/data/inscripciones";
 import { errorApi } from "@/mocks/handlers/respuestas";
@@ -77,6 +78,36 @@ export function errorDeHorarios(
     return cupo !== null && ocupados(id, idInscripcionPropia) >= cupo;
   });
   return sinCupo ? errorApi(409, "CONFLICT", "No hay cupo disponible en uno o más horarios") : null;
+}
+
+/** Un plan solo para menores (ej. Plan Kids) no admite a quien ya cumplió 18 (verificarEdadParaElPlan del back). */
+function esMayorDeEdad(idAlumno: number): boolean {
+  const alumno = db.alumnos.find((a) => a.id_alumno === idAlumno);
+  const usuario = alumno && db.usuariosPersonas.find((u) => u.id_usuario === alumno.id_usuario);
+  return usuario !== undefined && edad(usuario.fecha_nacimiento) >= MAYORIA_DE_EDAD;
+}
+
+export function errorDeEdadParaElPlan(idPlan: number, idAlumno: number) {
+  const plan = db.planes.find((p) => p.id_plan === idPlan);
+  if (!plan?.solo_menores || !esMayorDeEdad(idAlumno)) return null;
+  return errorApi(400, "VALIDATION_ERROR", `El plan ${plan.nombre} es solo para menores de 18 años`);
+}
+
+/** verificarActividadesParaLaEdad del back: un plan solo para menores ofrece solo actividades para menores, y esas no admiten a un mayor. */
+export function errorDeActividadesParaLaEdad(idPlan: number, idsHorarios: number[], idAlumno: number) {
+  const plan = db.planes.find((p) => p.id_plan === idPlan);
+  const actividades = db.horarios
+    .filter((h) => idsHorarios.includes(h.id_horario))
+    .map((h) => db.actividades.find((a) => a.id_actividad === h.id_actividad)!);
+  const deAdultos = actividades.find((a) => !a.solo_menores);
+  if (plan?.solo_menores && deAdultos) {
+    return errorApi(400, "VALIDATION_ERROR", `El plan ${plan.nombre} solo admite actividades para menores: ${deAdultos.nombre} no lo es`);
+  }
+  const infantil = actividades.find((a) => a.solo_menores);
+  if (infantil && esMayorDeEdad(idAlumno)) {
+    return errorApi(400, "VALIDATION_ERROR", `${infantil.nombre} es solo para menores de 18 años`);
+  }
+  return null;
 }
 
 /** Guarda una inscripción nueva con el precio vigente del plan. */

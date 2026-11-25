@@ -8,6 +8,23 @@ import type { PlanApiRespuesta } from "@/types/plan";
 
 type ReglasDelPlan = Pick<PlanApiRespuesta, "tipo" | "clases_por_semana" | "id_actividad_exclusiva">;
 
+/**
+ * Horarios que se pueden ofrecer según la edad (verificarActividadesParaLaEdad del back): un plan solo para
+ * menores ofrece solo actividades para menores, y a un mayor no se le ofrecen. Sin dato de la edad no se
+ * descarta nada por edad.
+ */
+export function horariosParaLaEdad(
+  horarios: HorarioApi[],
+  plan: Pick<PlanApiRespuesta, "solo_menores"> | null,
+  menorDeEdad?: boolean,
+): HorarioApi[] {
+  return horarios.filter(({ actividad }) => {
+    const infantil = actividad.solo_menores === true;
+    if (plan?.solo_menores && !infantil) return false;
+    return !(infantil && menorDeEdad === false);
+  });
+}
+
 /** Clases por semana que hay que elegir: una para la clase suelta. */
 export function clasesRequeridasDelPlan(plan: ReglasDelPlan | null): number {
   if (!plan) return 0;

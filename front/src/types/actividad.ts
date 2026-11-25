@@ -12,4 +12,6 @@ export interface Actividad {
   cupoMaximo: number | null;
   activo?: boolean;
   requiereMedidas?: boolean;
+  /** Solo admite alumnos menores de 18 años (ej. Kid Fit). */
+  soloMenores?: boolean;
 }

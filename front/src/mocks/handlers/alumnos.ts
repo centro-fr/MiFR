@@ -5,7 +5,8 @@ import { db, siguienteId, type HorarioMock } from "@/mocks/db";
 import type { AlumnoMock, UsuarioPersonaMock } from "@/mocks/data/alumnos";
 import type { InscripcionMock } from "@/mocks/data/inscripciones";
 import { errorApi, idDeRuta, idInvalido, usuarioDeLaSesion, verificarAcceso } from "@/mocks/handlers/respuestas";
-import { errorDeHorarios, guardarInscripcion, planYHorariosSchema, vigentesDe } from "@/mocks/handlers/reglas-inscripcion";
+import { edad, MAYORIA_DE_EDAD } from "@/mocks/edad";
+import { errorDeActividadesParaLaEdad, errorDeEdadParaElPlan, errorDeHorarios, guardarInscripcion, planYHorariosSchema, vigentesDe } from "@/mocks/handlers/reglas-inscripcion";
 import { cambioProgramadoDe, inscripcionConDatos } from "@/mocks/handlers/serializar";
 import { situacionCuotaDe, tuvoPagoConfirmado } from "@/mocks/situacion-cuota";
 import { hoyEnArgentina, precioVigenteDePlan } from "@/mocks/precios";
@@ -18,7 +19,6 @@ import { normalizarParaBuscar } from "@/utils/texto";
 const LIMITE_POR_DEFECTO = 20;
 const LIMITE_MAXIMO = 100;
 const ESTADOS = ["ACTIVO", "INACTIVO", "BAJA"];
-const MAYORIA_DE_EDAD = 18;
 // La profesora solo modifica contacto y observaciones (PATCH /alumnos/:id).
 const CAMPOS_DE_LA_PROFESORA = ["telefono", "direccion", "cont_emerg_nombre", "cont_emerg_telefono", "observaciones"];
 
@@ -212,15 +212,6 @@ const actualizarAlumnoSchema = z
   .refine((datos) => Object.keys(datos).length > 0);
 
 type TutorInput = z.infer<typeof tutorSchema>;
-
-function edad(fechaNacimiento: string): number {
-  const nacimiento = new Date(fechaNacimiento);
-  const hoy = new Date();
-  const cumplioEsteAnio =
-    hoy.getUTCMonth() > nacimiento.getUTCMonth() ||
-    (hoy.getUTCMonth() === nacimiento.getUTCMonth() && hoy.getUTCDate() >= nacimiento.getUTCDate());
-  return hoy.getUTCFullYear() - nacimiento.getUTCFullYear() - (cumplioEsteAnio ? 0 : 1);
-}
 
 function identidadOcupada(dni: string | undefined, email: string | undefined, idUsuarioPropio?: number) {
   const otros = db.usuariosPersonas.filter((u) => u.id_usuario !== idUsuarioPropio);
@@ -794,7 +785,10 @@ export const alumnosHandlers = [
     const alumno = buscarAlumno(id);
     if (!alumno) return errorApi(404, "NOT_FOUND", "Alumno no encontrado");
     if (alumno.estado !== "BAJA") return errorApi(409, "CONFLICT", "Solo se puede reactivar un alumno dado de baja");
-    const error = errorDeHorarios(cuerpo.data);
+    const error =
+      errorDeEdadParaElPlan(cuerpo.data.id_plan, alumno.id_alumno) ??
+      errorDeHorarios(cuerpo.data) ??
+      errorDeActividadesParaLaEdad(cuerpo.data.id_plan, cuerpo.data.ids_horarios, alumno.id_alumno);
     if (error) return error;
 
     // Quien nunca pagó vuelve pre-inscripto y sin acceso hasta su primer pago (US-07).

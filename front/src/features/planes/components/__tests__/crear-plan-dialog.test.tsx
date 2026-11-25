@@ -105,8 +105,20 @@ describe("CrearPlanDialog", () => {
         precio: 38500,
         dias_gracia: 5,
         clases_por_semana: 2,
+        solo_menores: false,
       }),
       expect.any(Object)
     );
+  });
+
+  it("crea un plan solo para menores al marcar la casilla", () => {
+    render(<CrearPlanDialog abierto={true} onClose={onClose} />);
+
+    fireEvent.change(screen.getByLabelText(/Nombre \*/i), { target: { value: "Kids" } });
+    fireEvent.change(screen.getByLabelText(/Precio inicial \*/i), { target: { value: "22000" } });
+    fireEvent.click(screen.getByRole("checkbox", { name: /Solo para menores de 18 años/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Crear plan" }));
+
+    expect(mockMutate).toHaveBeenCalledWith(expect.objectContaining({ nombre: "Kids", solo_menores: true }), expect.any(Object));
   });
 });
